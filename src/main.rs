@@ -3,21 +3,24 @@ use std::io;
 fn main() {
     // 1. Create client
     let (client, _status) =
-        jack::Client::new("rust_jack_simple", jack::ClientOptions::default()).unwrap();
+        jack::Client::new("Yukio's Step Sequencer", jack::ClientOptions::default()).unwrap();
 
     // 2. Register ports. They will be used in a callback that will be
     // called when new data is available.
     let in_a: jack::Port<jack::AudioIn> = client
-        .register_port("二狗_左声道", jack::AudioIn::default())
+        .register_port("in_audio_l", jack::AudioIn::default())
         .unwrap();
     let in_b: jack::Port<jack::AudioIn> = client
-        .register_port("二狗_右声道", jack::AudioIn::default())
+        .register_port("in_audio_r", jack::AudioIn::default())
         .unwrap();
     let mut out_a: jack::Port<jack::AudioOut> = client
-        .register_port("大马猴_左声道", jack::AudioOut::default())
+        .register_port("out_audio_l", jack::AudioOut::default())
         .unwrap();
     let mut out_b: jack::Port<jack::AudioOut> = client
-        .register_port("大马猴_右声道", jack::AudioOut::default())
+        .register_port("out_audio_r", jack::AudioOut::default())
+        .unwrap();
+    let mut out_midi: jack::Port<jack::MidiOut> = client
+        .register_port("out_midi", jack::MidiOut::default())
         .unwrap();
     let process_callback = move |_: &jack::Client, ps: &jack::ProcessScope| -> jack::Control {
         let out_a_p = out_a.as_mut_slice(ps);
