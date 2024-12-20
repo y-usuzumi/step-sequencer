@@ -1,6 +1,21 @@
-use std::io;
+use crate::{audio::SSClient, SSResult};
 
-fn main() {
+pub struct SSJackClient;
+
+impl SSJackClient {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl SSClient for SSJackClient {
+    fn start() -> SSResult<()> {
+        println!("SSJackClient started");
+        Ok(())
+    }
+}
+
+fn create_ss_jack_client() {
     // 1. Create client
     let (client, _status) =
         jack::Client::new("Yukio's Step Sequencer", jack::ClientOptions::default()).unwrap();
