@@ -1,0 +1,7 @@
+[package]
+name = "step-sequencer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jack = "0.13.0"
