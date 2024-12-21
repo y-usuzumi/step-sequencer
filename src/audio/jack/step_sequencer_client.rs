@@ -1,4 +1,5 @@
 use crate::{audio::SSClient, SSResult};
+use std::io;
 
 pub struct SSJackClient;
 
@@ -9,7 +10,8 @@ impl SSJackClient {
 }
 
 impl SSClient for SSJackClient {
-    fn start() -> SSResult<()> {
+    fn start(&self) -> SSResult<()> {
+        create_ss_jack_client();
         println!("SSJackClient started");
         Ok(())
     }
