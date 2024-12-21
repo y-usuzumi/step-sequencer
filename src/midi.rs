@@ -67,7 +67,9 @@ impl Message {
     // Write is impl'd on &mut [u8], so write_all is actually called
     // on &mut &mut buf. That's why buf itself needs to be declared `mut`.
     fn write_to_buffer(&self, mut buf: &mut [u8]) -> io::Result<()> {
-        let data = [&[self.cmd << 4 | self.channel] as &[u8], &self.data_bytes].concat();
+        let mut data = vec![0; self.data_bytes.len() + 1];
+        data[0] = self.cmd << 4 | self.channel;
+        data[1..].clone_from_slice(&self.data_bytes);
         (&mut buf).write_all(&data)
     }
 }
