@@ -1,3 +1,4 @@
+use super::midi_client::create_midi_client;
 use crate::{audio::SSClient, SSResult};
 
 use coreaudio::audio_unit::render_callback::{self, data};
@@ -14,7 +15,9 @@ impl SSCoreAudioClient {
 
 impl SSClient for SSCoreAudioClient {
     fn start(&self) -> SSResult<()> {
-        coreaudio_example_sinewave()?;
+        println!("Running midi client");
+        // coreaudio_example_sinewave()?;
+        create_midi_client()?;
         println!("SSCoreAudioClient started");
         Ok(())
     }
