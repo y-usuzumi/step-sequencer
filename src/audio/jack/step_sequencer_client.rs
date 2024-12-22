@@ -1,6 +1,11 @@
 use jack::{Frames, RawMidi};
 
-use crate::{audio::SSClient, beatmaker::BeatMaker, midi::ChannelVoiceEvent, SSResult};
+use crate::{
+    audio::SSClient,
+    beatmaker::{BeatMaker, BeatMakerSubscription},
+    midi::ChannelVoiceEvent,
+    SSResult,
+};
 use std::io;
 
 pub struct SSJackClient;
@@ -61,13 +66,13 @@ fn process_midi(
         println!("Seconds: {:?}", seconds);
         let message = if seconds % 2 != 0 {
             ChannelVoiceEvent::NoteOn {
-                channel: 12,
+                channel: 0,
                 key: 64,
                 velocity: 64,
             }
         } else {
             ChannelVoiceEvent::NoteOff {
-                channel: 12,
+                channel: 0,
                 key: 64,
                 velocity: 64,
             }
@@ -79,9 +84,35 @@ fn process_midi(
             bytes: &data,
         };
         midi_writer.write(&raw_midi)?;
-        state.last_event_midi_seconds = seconds;
     }
 
+    Ok(())
+}
+
+fn process_beatmaker(
+    subscription: &BeatMakerSubscription,
+    state: &mut TestState,
+    client: &jack::Client,
+    port: &mut jack::Port<jack::MidiOut>,
+    process_scope: &jack::ProcessScope,
+) -> SSResult<()> {
+    match &subscription.try_recv() {
+        Ok(event) => {
+            println!("BeatMaker: subscription ID: {:?}", subscription.id());
+            println!("BeatMaker: Received event from: {:?}", event);
+            let data = event.to_data()?;
+            println!("BeatMaker: MIDI data: {:?}", data);
+            let raw_midi = RawMidi {
+                time: 1,
+                bytes: &data,
+            };
+            let mut midi_writer = port.writer(process_scope);
+            midi_writer.write(&raw_midi)?;
+        }
+        Err(e) => {
+            // println!("BeatMaker: {:?}", e);
+        }
+    }
     Ok(())
 }
 
@@ -112,28 +143,38 @@ fn create_ss_jack_client() {
         .unwrap();
 
     let mut beatmaker = BeatMaker::default();
-    let subscription = beatmaker.subscribe();
+    let beatmaker_subscription = beatmaker.subscribe();
 
     let process_callback = move |state: &mut TestState,
                                  client: &jack::Client,
-                                 ps: &jack::ProcessScope|
+                                 process_scope: &jack::ProcessScope|
           -> jack::Control {
-        let out_a_p = out_a.as_mut_slice(ps);
-        let out_b_p = out_b.as_mut_slice(ps);
-        let in_a_p = in_a.as_slice(ps);
-        let in_b_p = in_b.as_slice(ps);
+        let out_a_p = out_a.as_mut_slice(process_scope);
+        let out_b_p = out_b.as_mut_slice(process_scope);
+        let in_a_p = in_a.as_slice(process_scope);
+        let in_b_p = in_b.as_slice(process_scope);
         out_a_p.clone_from_slice(in_a_p);
         out_b_p.clone_from_slice(in_b_p);
 
         // Sine wave test
-        process_sine_wave(client, &mut out_sinewave, ps);
+        process_sine_wave(client, &mut out_sinewave, process_scope);
 
         // Midi test
-        let _ = process_midi(state, client, &mut out_midi, ps);
+        let _ = process_midi(state, client, &mut out_midi, process_scope);
+        let _ = process_beatmaker(
+            &beatmaker_subscription,
+            state,
+            client,
+            &mut out_midi,
+            process_scope,
+        );
 
-        let maybe_event = &subscription.try_recv();
-        if let Ok(event) = maybe_event {
-            println!("Received event from BeatMaker: {:?}", event);
+        let frame_time = process_scope.last_frame_time();
+        let frames = process_scope.n_frames();
+        let sample_rate = client.sample_rate() as u32;
+        let seconds = (frame_time + frames) / sample_rate;
+        if seconds > state.last_event_midi_seconds {
+            state.last_event_midi_seconds = seconds;
         }
 
         jack::Control::Continue

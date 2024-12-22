@@ -2,13 +2,16 @@ use std::{
     collections::HashMap,
     sync::{
         mpsc::{self},
-        Arc, Mutex,
+        Arc, Mutex, MutexGuard,
     },
     thread,
     time::Duration,
 };
 
-use crate::{midi::ChannelVoiceEvent, SSResult};
+use crate::{
+    midi::{ChannelVoiceEvent, Key},
+    SSResult,
+};
 
 pub struct BeatMaker {
     bpm: u32,
@@ -43,17 +46,58 @@ impl BeatMaker {
 
     pub fn start(&self) -> SSResult<BeatMakerAsyncHandle> {
         let subscribers = self.subscribers.clone();
-        let thread_handle = thread::spawn(move || {
-            for _ in 0..10 {
-                for sender in subscribers.lock().unwrap().values() {
-                    let _ = sender.send(ChannelVoiceEvent::NoteOff {
-                        channel: 1,
-                        key: 10,
-                        velocity: 42,
-                    });
-                    thread::sleep(Duration::from_secs(3));
-                }
+        fn send_key(
+            subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>,
+            key: Key,
+        ) {
+            println!("BeatMaker: Sending events");
+            for sender in subscribers.values() {
+                let _ = sender.send(ChannelVoiceEvent::NoteOn {
+                    channel: 9, // is 10 to human
+                    key: key,
+                    velocity: 80,
+                });
+                let _ = sender.send(ChannelVoiceEvent::NoteOff {
+                    channel: 9, // is 10 to human
+                    key: key,
+                    velocity: 80,
+                });
             }
+        }
+        fn kick(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+            send_key(subscribers, 36);
+        }
+        fn snare(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+            send_key(subscribers, 37);
+        }
+        fn hihat(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+            send_key(subscribers, 38);
+        }
+        let thread_handle = thread::spawn(move || loop {
+            let interval = 300;
+            let subscribers = subscribers.lock().unwrap();
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            snare(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            // ---
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            snare(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
         });
         Ok(BeatMakerAsyncHandle)
     }
@@ -68,6 +112,10 @@ pub struct BeatMakerSubscription {
 }
 
 impl BeatMakerSubscription {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
     pub fn recv(&self) -> SSResult<ChannelVoiceEvent> {
         match self.receiver.recv() {
             Ok(event) => Ok(event),
