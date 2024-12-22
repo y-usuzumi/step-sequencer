@@ -21,3 +21,9 @@ Code-wise, I've currently only implemented basic MIDI event data structure and s
 On macOS, it is able to produce sine wave audio through CoreAudio.
 On Linux, it is able to produce sine wave audio through JACK.
 On Linux, it is able to produce alternating series of Note on/off events. It can be configured to route to Bitwig using a2jmidid.
+
+For further updates, please check the project Kanban: https://github.com/users/y-usuzumi/projects/1/views/1.
+
+## Design docs
+
+* [Beatmaker](docs/Beatmaker.md)
