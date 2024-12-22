@@ -3,12 +3,12 @@ name = "step-sequencer"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+thiserror = "2.0.8"
+
 [target.'cfg(target_os="linux")'.dependencies]
 jack = "0.13.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
 coreaudio-rs = "0.12.1"
 coremidi = "0.8.0"
-
-[dependencies]
-thiserror = "2.0.8"

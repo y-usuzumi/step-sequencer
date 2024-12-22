@@ -1,6 +1,6 @@
 use jack::{Frames, RawMidi};
 
-use crate::{audio::SSClient, midi::ChannelVoiceEvent, SSResult};
+use crate::{audio::SSClient, beatmaker::BeatMaker, midi::ChannelVoiceEvent, SSResult};
 use std::io;
 
 pub struct SSJackClient;
@@ -111,6 +111,9 @@ fn create_ss_jack_client() {
         .register_port("out_midi", jack::MidiOut::default())
         .unwrap();
 
+    let mut beatmaker = BeatMaker::default();
+    let subscription = beatmaker.subscribe();
+
     let process_callback = move |state: &mut TestState,
                                  client: &jack::Client,
                                  ps: &jack::ProcessScope|
@@ -128,6 +131,11 @@ fn create_ss_jack_client() {
         // Midi test
         let _ = process_midi(state, client, &mut out_midi, ps);
 
+        let maybe_event = &subscription.try_recv();
+        if let Ok(event) = maybe_event {
+            println!("Received event from BeatMaker: {:?}", event);
+        }
+
         jack::Control::Continue
     };
     let process = jack::contrib::ClosureProcessHandler::with_state(
@@ -137,6 +145,8 @@ fn create_ss_jack_client() {
         process_callback,
         move |_, _, _| jack::Control::Continue,
     );
+
+    let _ = beatmaker.start();
 
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();

@@ -13,6 +13,6 @@ pub enum SSError {
     IOError(#[from] io::Error),
     #[error("Unsupported platform: `{0}`")]
     UnsupportedPlatform(String),
-    #[error("Unknown: todo")]
-    Unknown,
+    #[error("Unknown: `{0}`")]
+    Unknown(String),
 }

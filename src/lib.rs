@@ -1,6 +1,7 @@
 use error::SSError;
 
 pub mod audio;
+pub mod beatmaker;
 pub mod error;
 pub mod midi;
 
