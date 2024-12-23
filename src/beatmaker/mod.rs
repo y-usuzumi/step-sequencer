@@ -11,10 +11,7 @@ use std::{
 
 use pattern::{play_example_pattern, BeatNoteMap};
 
-use crate::{
-    midi::{ChannelVoiceEvent, Key},
-    SSResult,
-};
+use crate::{midi::ChannelVoiceEvent, SSResult};
 
 pub struct BeatMaker {
     bpm: u32,
@@ -50,7 +47,6 @@ impl BeatMaker {
     pub fn start(&self, beat_note_map: BeatNoteMap) -> SSResult<BeatMakerAsyncHandle> {
         let subscribers = self.subscribers.clone();
 
-        
         let thread_handle = thread::spawn(move || {
             play_example_pattern(&beat_note_map, subscribers);
         });

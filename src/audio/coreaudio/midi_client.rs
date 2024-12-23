@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use coremidi::{Client, PacketBuffer};
 
 use crate::{
-    beatmaker::{pattern::BEAT_NOTE_MAP_BITWIG, BeatMaker},
+    beatmaker::{pattern::BEAT_NOTE_MAP_GARAGEBAND, BeatMaker},
     midi::ChannelVoiceEvent,
     SSResult,
 };
@@ -13,7 +13,7 @@ pub fn create_midi_client() -> SSResult<Client> {
     let source = client.virtual_source("source").unwrap();
 
     let mut beatmaker = BeatMaker::default();
-    let _ = beatmaker.start(BEAT_NOTE_MAP_BITWIG);
+    let _ = beatmaker.start(BEAT_NOTE_MAP_GARAGEBAND);
     let beatmaker_subscription = beatmaker.subscribe();
     for event in beatmaker_subscription.iter() {
         println!(

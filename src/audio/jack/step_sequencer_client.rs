@@ -1,3 +1,4 @@
+use crate::beatmaker::pattern::BEAT_NOTE_MAP_BITWIG;
 use jack::{Frames, RawMidi};
 
 use crate::{
@@ -113,7 +114,8 @@ fn process_beatmaker(
         Err(e) => {
             // println!("BeatMaker: {:?}", e);
         }
-    }Ok(())
+    }
+    Ok(())
 }
 
 fn create_ss_jack_client() {
@@ -187,7 +189,7 @@ fn create_ss_jack_client() {
         move |_, _, _| jack::Control::Continue,
     );
 
-    let _ = beatmaker.start();
+    let _ = beatmaker.start(BEAT_NOTE_MAP_BITWIG);
 
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();

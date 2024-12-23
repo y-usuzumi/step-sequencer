@@ -1,11 +1,13 @@
-use std::{collections::HashMap, sync::{mpsc, Arc, Mutex, MutexGuard}, thread, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{mpsc, Arc, Mutex, MutexGuard},
+    thread,
+    time::Duration,
+};
 
 use crate::midi::{ChannelVoiceEvent, Key};
 
-fn send_key(
-    subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>,
-    key: Key,
-) {
+fn send_key(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>, key: Key) {
     println!("BeatMaker: Sending events");
     for sender in subscribers.values() {
         let _ = sender.send(ChannelVoiceEvent::NoteOn {
@@ -26,7 +28,7 @@ pub struct BeatNoteMap {
     pub kick: Key,
     pub hihat: Key,
     pub snare: Key,
-    pub hihat_open: Key
+    pub hihat_open: Key,
 }
 
 impl BeatNoteMap {
@@ -44,11 +46,23 @@ impl BeatNoteMap {
     }
 }
 
-pub const BEAT_NOTE_MAP_GARAGEBAND: BeatNoteMap = BeatNoteMap { kick: 36, snare: 37, hihat: 30, hihat_open: 32};
-pub const BEAT_NOTE_MAP_BITWIG: BeatNoteMap = BeatNoteMap { kick: 36, snare: 37, hihat: 42, hihat_open: 46};
+pub const BEAT_NOTE_MAP_BITWIG: BeatNoteMap = BeatNoteMap {
+    kick: 36,
+    snare: 37,
+    hihat: 38,
+    hihat_open: 39,
+};
+pub const BEAT_NOTE_MAP_GARAGEBAND: BeatNoteMap = BeatNoteMap {
+    kick: 36,
+    snare: 37,
+    hihat: 42,
+    hihat_open: 46,
+};
 
-
-pub fn play_example_pattern(beat_note_map: &BeatNoteMap, subscribers: Arc<Mutex<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>>) {
+pub fn play_example_pattern(
+    beat_note_map: &BeatNoteMap,
+    subscribers: Arc<Mutex<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>>,
+) {
     loop {
         let interval = 300;
         let subscribers = subscribers.lock().unwrap();
