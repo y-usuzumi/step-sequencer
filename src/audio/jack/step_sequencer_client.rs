@@ -113,8 +113,7 @@ fn process_beatmaker(
         Err(e) => {
             // println!("BeatMaker: {:?}", e);
         }
-    }
-    Ok(())
+    }Ok(())
 }
 
 fn create_ss_jack_client() {
