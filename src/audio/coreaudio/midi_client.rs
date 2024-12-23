@@ -2,14 +2,18 @@ use std::{thread, time::Duration};
 
 use coremidi::{Client, PacketBuffer};
 
-use crate::{beatmaker::BeatMaker, midi::ChannelVoiceEvent, SSResult};
+use crate::{
+    beatmaker::{pattern::BEAT_NOTE_MAP_BITWIG, BeatMaker},
+    midi::ChannelVoiceEvent,
+    SSResult,
+};
 
 pub fn create_midi_client() -> SSResult<Client> {
     let client = Client::new("Yukio's Step Sequencer MIDI").unwrap();
     let source = client.virtual_source("source").unwrap();
 
     let mut beatmaker = BeatMaker::default();
-    let _ = beatmaker.start();
+    let _ = beatmaker.start(BEAT_NOTE_MAP_BITWIG);
     let beatmaker_subscription = beatmaker.subscribe();
     for event in beatmaker_subscription.iter() {
         println!(
