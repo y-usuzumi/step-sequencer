@@ -1,3 +1,5 @@
+pub mod note;
+
 use std::io::{self, Write};
 
 use self::ChannelVoiceEvent::*;

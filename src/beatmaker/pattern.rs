@@ -5,19 +5,22 @@ use std::{
     time::Duration,
 };
 
-use crate::midi::{ChannelVoiceEvent, Key};
+use crate::midi::{note::Note, ChannelVoiceEvent, Key};
 
-fn send_key(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>, key: Key) {
+fn send_key<K>(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>, key: &K)
+where
+    K: Clone + Into<Key>,
+{
     println!("BeatMaker: Sending events");
     for sender in subscribers.values() {
         let _ = sender.send(ChannelVoiceEvent::NoteOn {
             channel: 9, // is 10 to human
-            key: key,
+            key: key.clone().into(),
             velocity: 80,
         });
         let _ = sender.send(ChannelVoiceEvent::NoteOff {
             channel: 9, // is 10 to human
-            key: key,
+            key: key.clone().into(),
             velocity: 80,
         });
     }
@@ -25,38 +28,38 @@ fn send_key(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent
 
 #[derive(Debug, Clone)]
 pub struct BeatNoteMap {
-    pub kick: Key,
-    pub hihat: Key,
-    pub snare: Key,
-    pub hihat_open: Key,
+    pub kick: Note,
+    pub hihat: Note,
+    pub snare: Note,
+    pub hihat_open: Note,
 }
 
 impl BeatNoteMap {
     fn kick(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
-        send_key(subscribers, self.kick);
+        send_key(subscribers, &self.kick);
     }
     fn snare(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
-        send_key(subscribers, self.snare);
+        send_key(subscribers, &self.snare);
     }
     fn hihat(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
-        send_key(subscribers, self.hihat);
+        send_key(subscribers, &self.hihat);
     }
     fn hihat_open(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
-        send_key(subscribers, self.hihat_open);
+        send_key(subscribers, &self.hihat_open);
     }
 }
 
 pub const BEAT_NOTE_MAP_BITWIG: BeatNoteMap = BeatNoteMap {
-    kick: 36,
-    snare: 37,
-    hihat: 38,
-    hihat_open: 39,
+    kick: Note::C(1),
+    snare: Note::Cs(1),
+    hihat: Note::D(1),
+    hihat_open: Note::Ds(1),
 };
 pub const BEAT_NOTE_MAP_GARAGEBAND: BeatNoteMap = BeatNoteMap {
-    kick: 36,
-    snare: 37,
-    hihat: 42,
-    hihat_open: 46,
+    kick: Note::C(1),
+    snare: Note::Cs(1),
+    hihat: Note::Fs(1),
+    hihat_open: Note::As(1),
 };
 
 pub fn play_example_pattern(
