@@ -33,12 +33,12 @@ impl ChannelVoiceEvent {
                 channel,
                 key,
                 velocity,
-            } => (0b1000, channel, &[key, velocity]),
+            } => (0b1001, channel, &[key, velocity]),
             NoteOff {
                 channel,
                 key,
                 velocity,
-            } => (0b1001, channel, &[key, velocity]),
+            } => (0b1000, channel, &[key, velocity]),
         };
         Message {
             cmd,

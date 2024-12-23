@@ -102,10 +102,11 @@ fn process_beatmaker(
             println!("BeatMaker: Received event from: {:?}", event);
             let data = event.to_data()?;
             println!("BeatMaker: MIDI data: {:?}", data);
-            let raw_midi = RawMidi {
-                time: 1,
-                bytes: &data,
+            let time = match event {
+                ChannelVoiceEvent::NoteOff { .. } => 1,
+                _ => 0,
             };
+            let raw_midi = RawMidi { time, bytes: &data };
             let mut midi_writer = port.writer(process_scope);
             midi_writer.write(&raw_midi)?;
         }

@@ -73,9 +73,13 @@ impl BeatMaker {
         fn hihat(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
             send_key(subscribers, 38);
         }
+        fn hihat_open(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+            send_key(subscribers, 39);
+        }
         let thread_handle = thread::spawn(move || loop {
             let interval = 300;
             let subscribers = subscribers.lock().unwrap();
+            // 1--
             kick(&subscribers);
             hihat(&subscribers);
             thread::sleep(Duration::from_millis(interval));
@@ -86,7 +90,7 @@ impl BeatMaker {
             thread::sleep(Duration::from_millis(interval));
             hihat(&subscribers);
             thread::sleep(Duration::from_millis(interval));
-            // ---
+            // 2--
             kick(&subscribers);
             hihat(&subscribers);
             thread::sleep(Duration::from_millis(interval));
@@ -97,6 +101,29 @@ impl BeatMaker {
             hihat(&subscribers);
             thread::sleep(Duration::from_millis(interval));
             hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            // 3--
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            snare(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            // 4--
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            kick(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            snare(&subscribers);
+            hihat(&subscribers);
+            thread::sleep(Duration::from_millis(interval));
+            hihat_open(&subscribers);
             thread::sleep(Duration::from_millis(interval));
         });
         Ok(BeatMakerAsyncHandle)
