@@ -73,7 +73,7 @@ impl BeatMaker {
             beat_timer.run_forever(|current_beats| {
                 debug!("🥁 {}", current_beats);
                 let subscribers = subscribers.read().unwrap();
-                for track in tracks.read().unwrap().iter() {
+                for track in tracks.read().unwrap().values() {
                     let beat_idx = current_beats as usize % track.total_beats();
                     if let Some(beat) = track.get(beat_idx) {
                         send_beat(&subscribers, beat);

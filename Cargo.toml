@@ -8,6 +8,7 @@ casey = "0.4.0"
 env_logger = "0.11.6"
 log = "0.4.22"
 thiserror = "2.0.8"
+uuid = { version = "1.11.0", features = ["fast-rng", "macro-diagnostics", "v4"] }
 
 [target.'cfg(target_os="linux")'.dependencies]
 jack = "0.13.0"

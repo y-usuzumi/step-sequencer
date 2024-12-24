@@ -1,11 +1,12 @@
-use std::sync::{Arc, RwLock};
+use std::{collections::HashMap, sync::{Arc, RwLock}};
 
-use crate::{beatmaker::BeatMaker, drum_track::DrumTrack, SSResult};
+use crate::{drum_track::DrumTrack, id::{new_id, SSId}};
 
-pub struct Project<'a> {
-    tracks: Arc<RwLock<Vec<DrumTrack>>>,
+type TrackMap = HashMap<SSId, DrumTrack>;
+
+pub struct Project {
+    tracks: Arc<RwLock<TrackMap>>,
     project_settings: Arc<RwLock<ProjectSettings>>,
-    beatmaker: &'a BeatMaker,
 }
 
 pub struct ProjectSettings {
@@ -18,30 +19,30 @@ impl Default for ProjectSettings {
     }
 }
 
-impl<'a> Project<'a> {
-    pub fn new(beatmaker: &'a BeatMaker) -> Self {
+impl Project {
+    pub fn new() -> Self {
         Self {
-            tracks: Arc::new(RwLock::new(Vec::new())),
+            tracks: Arc::new(RwLock::new(HashMap::new())),
             project_settings: Arc::new(RwLock::new(ProjectSettings::default())),
-            beatmaker: beatmaker,
         }
     }
 
-    pub fn add_track(&self) -> usize {
+    pub fn add_track(&self, track: DrumTrack) -> SSId {
         let mut tracks = self.tracks.write().unwrap();
-        tracks.push(DrumTrack::new());
-        tracks.len() - 1
+        let track_id = new_id();
+        tracks.insert(track_id, track);
+        track_id
     }
 
-    pub fn play(&mut self) {
-        self.beatmaker.start(&self);
+    pub fn add_empty_track(&self) -> SSId {
+        self.add_track(DrumTrack::new())
     }
 
     pub fn project_settings(&self) -> Arc<RwLock<ProjectSettings>> {
         self.project_settings.clone()
     }
 
-    pub fn tracks(&self) -> Arc<RwLock<Vec<DrumTrack>>> {
+    pub fn tracks(&self) -> Arc<RwLock<TrackMap>> {
         self.tracks.clone()
     }
 }

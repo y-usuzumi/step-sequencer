@@ -13,19 +13,30 @@ use crate::{
 };
 use std::io;
 
-pub struct SSJackClient;
+pub struct SSJackClient {
+    beatmaker: BeatMaker,
+    project: Project
+}
 
 impl SSJackClient {
-    pub fn new() -> Self {
-        Self
+    pub fn new(beatmaker: BeatMaker, project: Project) -> Self {
+        Self { beatmaker, project }
     }
 }
 
 impl SSClient for SSJackClient {
-    fn start(&self) -> SSResult<()> {
+    fn start(&mut self) -> SSResult<()> {
         create_ss_jack_client();
         info!("SSJackClient started");
         Ok(())
+    }
+
+    fn stop(&mut self) -> SSResult<()> {
+        todo!("See code below: active_client.deactivate()");
+    }
+
+    fn send_command(&mut self, command: &str) -> SSResult<()> {
+
     }
 }
 
@@ -192,23 +203,10 @@ fn create_ss_jack_client() {
 
     // let _ = beatmaker.start_with_beat_note_map(BEAT_NOTE_MAP_BITWIG);
     let project = Project::new(&beatmaker);
-    // FIXME: This is terrible!
-    let idx = project.add_track();
-    let tracks = project.tracks();
-    {
-        // Darn it, I was missing the square brackets earlier, and this write lock blocks
-        // all read operations!!!
-        let mut tracks_guard = tracks.write().unwrap();
-        let track = tracks_guard.get_mut(idx).unwrap();
-        *track = create_example_track_kick_snare();
+    for track in EXAMPLE_DRUMTRACKS_BITWIG.all_tracks() {
+        project.add_track(track);
     }
-    let idx = project.add_track();
     let tracks = project.tracks();
-    {
-        let mut tracks_guard = tracks.write().unwrap();
-        let track = tracks_guard.get_mut(idx).unwrap();
-        *track = create_example_track_hihat();
-    }
 
     let _ = beatmaker.start(&project);
     info!("BeatMaker started");
@@ -219,27 +217,6 @@ fn create_ss_jack_client() {
 
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();
-
-    let mut user_input = String::new();
-    loop {
-        // 4. Wait for user input to quit
-        println!("Enter a command (Q/q to quit)...");
-        io::stdin().read_line(&mut user_input).ok();
-        match user_input.as_str() {
-            "q\n" | "Q\n" => {
-                break;
-            }
-            input => {
-                if let Ok(tempo) = input.trim_end().parse() {
-                    info!("Setting tempo to {}", tempo);
-                    project.project_settings().write().unwrap().tempo = tempo;
-                } else {
-                    error!("Command error: {}", input)
-                }
-            }
-        }
-        user_input.clear();
-    }
 
     // 5. Not needed as the async client will cease processing on `drop`.
     if let Err(err) = active_client.deactivate() {

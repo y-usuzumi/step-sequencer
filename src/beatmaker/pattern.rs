@@ -57,19 +57,6 @@ impl BeatNoteMap {
     }
 }
 
-pub const BEAT_NOTE_MAP_BITWIG: BeatNoteMap = BeatNoteMap {
-    kick: Note::C(1),
-    snare: Note::Cs(1),
-    hihat: Note::D(1),
-    hihat_open: Note::Ds(1),
-};
-pub const BEAT_NOTE_MAP_GARAGEBAND: BeatNoteMap = BeatNoteMap {
-    kick: Note::C(1),
-    snare: Note::Cs(1),
-    hihat: Note::Fs(1),
-    hihat_open: Note::As(1),
-};
-
 pub fn play_example_pattern(beat_note_map: &BeatNoteMap, subscribers: Arc<RwLock<SubscriberMap>>) {
     loop {
         let interval = 300;
@@ -133,28 +120,83 @@ macro_rules! beat {
     };
 }
 
-pub fn create_example_track_kick_snare() -> DrumTrack {
-    DrumTrack::with_beats(&[
-        beat!(9, Note::C(1), 80),
-        None,
-        beat!(9, Note::Cs(1), 80),
-        None,
-        beat!(9, Note::C(1), 80),
-        beat!(9, Note::C(1), 80),
-        beat!(9, Note::Cs(1), 80),
-        None,
-    ])
+pub trait ExampleDrumTracks {
+    fn kick(&self) -> DrumTrack;
+    fn snare(&self) -> DrumTrack;
+    fn hihat(&self) -> DrumTrack;
+    fn hihat_open(&self) -> DrumTrack;
+    fn all_tracks(&self) -> Vec<DrumTrack> {
+        vec![self.kick(), self.snare(), self.hihat(), self.hihat_open()]
+    }
 }
 
-pub fn create_example_track_hihat() -> DrumTrack {
-    DrumTrack::with_beats(&[
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::D(1), 80),
-        beat!(9, Note::Ds(1), 80),
-    ])
+pub struct ExampleDiscoDrumTracks {
+    kick: Option<Beat>,
+    snare: Option<Beat>,
+    hihat: Option<Beat>,
+    hihat_open: Option<Beat>
 }
+
+impl ExampleDrumTracks for ExampleDiscoDrumTracks {
+    fn kick(&self) -> DrumTrack {
+        DrumTrack::with_beats(&[
+            self.kick,
+            None,
+            None,
+            None,
+            self.kick,
+            self.kick,
+            None,
+            None
+        ])
+    }
+
+    fn snare(&self) -> DrumTrack {
+        DrumTrack::with_beats(&[
+            None,
+            None,
+            self.snare,
+            None
+        ])
+    }
+
+    fn hihat(&self) -> DrumTrack {
+        DrumTrack::with_beats(&[
+            self.hihat,
+            self.hihat,
+            self.hihat,
+            self.hihat,
+            self.hihat,
+            self.hihat,
+            self.hihat,
+            None
+        ])
+    }
+
+    fn hihat_open(&self) -> DrumTrack {
+        DrumTrack::with_beats(&[
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            self.hihat_open
+        ])
+    }
+}
+
+pub static EXAMPLE_DRUMTRACKS_BITWIG: ExampleDiscoDrumTracks = ExampleDiscoDrumTracks {
+    kick: beat!(9, Note::C(1), 72),
+    snare: beat!(9, Note::Cs(1), 72),
+    hihat: beat!(9, Note::D(1), 72),
+    hihat_open: beat!(9, Note::Ds(1), 72),
+};
+
+pub static EXAMPLE_DRUMTRACKS_GARAGEBAND: ExampleDiscoDrumTracks = ExampleDiscoDrumTracks {
+    kick: beat!(9, Note::C(1), 72),
+    snare: beat!(9, Note::Cs(1), 72),
+    hihat: beat!(9, Note::Fs(1), 72),
+    hihat_open: beat!(9, Note::As(1), 72),
+};

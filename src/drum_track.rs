@@ -4,7 +4,7 @@ pub struct DrumTrack {
     beats: Vec<Option<Beat>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Beat {
     pub channel: Channel,
     pub note: Note,

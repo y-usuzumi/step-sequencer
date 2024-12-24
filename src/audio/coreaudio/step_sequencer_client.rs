@@ -1,25 +1,72 @@
-use super::midi_client::create_midi_client;
+use crate::audio::Command;
+use crate::beatmaker::BeatMaker;
+use crate::midi::ChannelVoiceEvent;
+use crate::project::Project;
 use crate::{audio::SSClient, SSResult};
 
 use coreaudio::audio_unit::render_callback::{self, data};
 use coreaudio::audio_unit::{AudioUnit, IOType, SampleFormat};
+use coremidi::{Client, PacketBuffer};
 use log::{debug, info};
 use std::f64::consts::PI;
+use std::thread;
+use std::time::Duration;
 
-pub struct SSCoreAudioClient;
+pub struct SSCoreAudioClient {
+    beatmaker: BeatMaker,
+    project: Project
+}
 
 impl SSCoreAudioClient {
-    pub fn new() -> Self {
-        Self
+    pub fn new(beatmaker: BeatMaker, project: Project) -> Self {
+        Self { beatmaker, project }
     }
 }
 
 impl SSClient for SSCoreAudioClient {
-    fn start(&self) -> SSResult<()> {
+    fn start(&mut self) -> SSResult<()> {
         info!("Running midi client");
-        // coreaudio_example_sinewave()?;
-        create_midi_client()?;
+        let beatmaker_subscription = self.beatmaker.subscribe();
+        self.beatmaker.start(&self.project);
+        thread::spawn(move || -> SSResult<()> {
+            let client = Client::new("Yukio's Step Sequencer MIDI").unwrap();
+            let source = client.virtual_source("source").unwrap();
+            // coreaudio_example_sinewave()?;
+            for event in beatmaker_subscription.iter() {
+                debug!(
+                    "BeatMaker: subscription ID: {:?}",
+                    beatmaker_subscription.id()
+                );
+                debug!("BeatMaker: Received event from: {:?}", event);
+                let data = event.to_data()?;
+                debug!("BeatMaker: MIDI data: {:?}", data);
+                let time = match event {
+                    ChannelVoiceEvent::NoteOff { .. } => 1,
+                    _ => 0,
+                };
+                let packet_buffer = PacketBuffer::new(time, &data);
+                source.received(&packet_buffer).unwrap();
+            }
+            Ok(())
+        });
+        // thread::sleep(Duration::from_secs(100));
         info!("SSCoreAudioClient started");
+        Ok(())
+    }
+
+    fn stop(&mut self) -> SSResult<()> {
+        // No-op for now
+        Ok(())
+    }
+
+    fn send_command(&mut self, command: Command) -> SSResult<()> {
+        match command {
+            Command::ChangeTempo(tempo) => {
+                let project_settings = self.project.project_settings();
+                project_settings.write().unwrap().tempo = tempo;
+            }
+        }
+
         Ok(())
     }
 }
