@@ -16,13 +16,13 @@ pub fn create_midi_client() -> SSResult<Client> {
     let _ = beatmaker.start_with_beat_note_map(BEAT_NOTE_MAP_GARAGEBAND);
     let beatmaker_subscription = beatmaker.subscribe();
     for event in beatmaker_subscription.iter() {
-        println!(
+        debug!(
             "BeatMaker: subscription ID: {:?}",
             beatmaker_subscription.id()
         );
-        println!("BeatMaker: Received event from: {:?}", event);
+        debug!("BeatMaker: Received event from: {:?}", event);
         let data = event.to_data()?;
-        println!("BeatMaker: MIDI data: {:?}", data);
+        debug!("BeatMaker: MIDI data: {:?}", data);
         let time = match event {
             ChannelVoiceEvent::NoteOff { .. } => 1,
             _ => 0,

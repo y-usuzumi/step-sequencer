@@ -1,13 +1,9 @@
 use crate::{
-    beatmaker::{
-        self,
-        pattern::{
-            create_example_track_hihat, create_example_track_kick_snare, BEAT_NOTE_MAP_BITWIG,
-        },
-    },
+    beatmaker::pattern::{create_example_track_hihat, create_example_track_kick_snare},
     project::Project,
 };
 use jack::{Frames, RawMidi};
+use log::{debug, error, info};
 
 use crate::{
     audio::SSClient,
@@ -28,7 +24,7 @@ impl SSJackClient {
 impl SSClient for SSJackClient {
     fn start(&self) -> SSResult<()> {
         create_ss_jack_client();
-        println!("SSJackClient started");
+        info!("SSJackClient started");
         Ok(())
     }
 }
@@ -67,12 +63,12 @@ fn process_midi(
     let frame_time = process_scope.last_frame_time();
     let frames = process_scope.n_frames();
     let sample_rate = client.sample_rate() as u32;
-    // println!("Sample rate: {:?}", sample_rate);
+    info!("Sample rate: {:?}", sample_rate);
     let mut midi_writer = port.writer(process_scope);
     let seconds = (frame_time + frames) / sample_rate;
     if seconds > state.last_event_midi_seconds {
-        println!("Frame time: {:?}, frames: {:?}", frame_time, frames);
-        println!("Seconds: {:?}", seconds);
+        debug!("Frame time: {:?}, frames: {:?}", frame_time, frames);
+        debug!("Seconds: {:?}", seconds);
         let message = if seconds % 2 != 0 {
             ChannelVoiceEvent::NoteOn {
                 channel: 0,
@@ -87,7 +83,7 @@ fn process_midi(
             }
         };
         let data = message.to_data()?;
-        println!("MIDI data: {:?}", data);
+        debug!("MIDI data: {:?}", data);
         let raw_midi = RawMidi {
             time: 1,
             bytes: &data,
@@ -108,10 +104,10 @@ fn process_beatmaker(
     // TODO: Can NOT use while loop to process all messages in the channel.
     // Find out why.
     if let Ok(event) = &subscription.try_recv() {
-        println!("BeatMaker: subscription ID: {:?}", subscription.id());
-        println!("BeatMaker: Received event from: {:?}", event);
+        debug!("BeatMaker: subscription ID: {:?}", subscription.id());
+        debug!("BeatMaker: Received event from: {:?}", event);
         let data = event.to_data()?;
-        println!("BeatMaker: MIDI data: {:?}", data);
+        debug!("BeatMaker: MIDI data: {:?}", data);
         let time = match event {
             ChannelVoiceEvent::NoteOff { .. } => 1,
             _ => 0,
@@ -215,6 +211,11 @@ fn create_ss_jack_client() {
     }
 
     let _ = beatmaker.start(&project);
+    info!("BeatMaker started");
+    info!(
+        "Current tempo: {}",
+        project.project_settings().read().unwrap().tempo
+    );
 
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();
@@ -230,10 +231,10 @@ fn create_ss_jack_client() {
             }
             input => {
                 if let Ok(tempo) = input.trim_end().parse() {
-                    println!("Setting tempo to {}", tempo);
+                    info!("Setting tempo to {}", tempo);
                     project.project_settings().write().unwrap().tempo = tempo;
                 } else {
-                    println!("Command error: {}", input)
+                    error!("Command error: {}", input)
                 }
             }
         }
@@ -242,6 +243,6 @@ fn create_ss_jack_client() {
 
     // 5. Not needed as the async client will cease processing on `drop`.
     if let Err(err) = active_client.deactivate() {
-        eprintln!("JACK exited with error: {err}");
+        error!("JACK exited with error: {err}");
     }
 }

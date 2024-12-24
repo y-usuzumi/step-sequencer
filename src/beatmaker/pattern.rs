@@ -4,6 +4,8 @@ use std::{
     time::Duration,
 };
 
+use log::debug;
+
 use crate::{
     drum_track::DrumTrack,
     midi::{note::Note, ChannelVoiceEvent, Key},
@@ -17,7 +19,7 @@ fn send_key<K>(subscribers: &RwLockReadGuard<SubscriberMap>, key: &K)
 where
     K: Clone + Into<Key>,
 {
-    println!("BeatMaker: Sending events");
+    debug!("BeatMaker: Sending events");
     for sender in subscribers.values() {
         let _ = sender.send(ChannelVoiceEvent::NoteOn {
             channel: 9, // is 10 to human

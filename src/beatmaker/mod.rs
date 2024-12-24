@@ -11,12 +11,13 @@ use std::{
 };
 
 use beat_timer::BeatTimer;
+use log::{debug, info};
 use pattern::{play_example_pattern, BeatNoteMap};
 
 use crate::{drum_track::Beat, midi::ChannelVoiceEvent, project::Project, SSResult};
 
 fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
-    println!("BeatMaker: Sending events");
+    debug!("BeatMaker: Sending events");
     for sender in subscribers.values() {
         let _ = sender.send(ChannelVoiceEvent::NoteOn {
             channel: beat.channel,
@@ -67,10 +68,10 @@ impl BeatMaker {
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         thread::spawn(move || {
-            println!("BeatMaker started");
+            info!("BeatMaker started");
             let beat_timer = BeatTimer::with_project_settings(project_settings);
             beat_timer.run_forever(|current_beats| {
-                println!("🥁 {}", current_beats);
+                debug!("🥁 {}", current_beats);
                 let subscribers = subscribers.read().unwrap();
                 for track in tracks.read().unwrap().iter() {
                     let beat_idx = current_beats as usize % track.total_beats();
