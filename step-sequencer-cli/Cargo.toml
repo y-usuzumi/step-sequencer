@@ -1,0 +1,10 @@
+[package]
+name = "step-sequencer-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+step-sequencer = { path = "../step-sequencer" }
+env_logger = "0.11.6"
+log = "0.4.22"
+thiserror = "2.0.8"

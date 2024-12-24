@@ -473,6 +473,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "step-sequencer-cli"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "step-sequencer",
+ "thiserror",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
