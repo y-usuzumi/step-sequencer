@@ -16,3 +16,5 @@ pub enum SSError {
     #[error("Unknown: `{0}`")]
     Unknown(String),
 }
+
+pub type SSResult<T> = std::result::Result<T, SSError>;

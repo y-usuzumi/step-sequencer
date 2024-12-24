@@ -2,7 +2,7 @@ use self::PitchClass::*;
 
 use super::Key;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum PitchClass {
     C,
     Cs,
@@ -42,7 +42,7 @@ impl Into<i8> for PitchClass {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Note {
     pitch_class: PitchClass,
     octave: i8,

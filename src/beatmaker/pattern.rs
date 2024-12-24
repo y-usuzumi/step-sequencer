@@ -1,13 +1,19 @@
 use std::{
-    collections::HashMap,
-    sync::{mpsc, Arc, Mutex, MutexGuard},
+    sync::{Arc, RwLock, RwLockReadGuard},
     thread,
     time::Duration,
 };
 
-use crate::midi::{note::Note, ChannelVoiceEvent, Key};
+use crate::{
+    drum_track::DrumTrack,
+    midi::{note::Note, ChannelVoiceEvent, Key},
+};
 
-fn send_key<K>(subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>, key: &K)
+use crate::drum_track::Beat;
+
+use super::SubscriberMap;
+
+fn send_key<K>(subscribers: &RwLockReadGuard<SubscriberMap>, key: &K)
 where
     K: Clone + Into<Key>,
 {
@@ -35,16 +41,16 @@ pub struct BeatNoteMap {
 }
 
 impl BeatNoteMap {
-    fn kick(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+    fn kick(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
         send_key(subscribers, &self.kick);
     }
-    fn snare(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+    fn snare(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
         send_key(subscribers, &self.snare);
     }
-    fn hihat(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+    fn hihat(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
         send_key(subscribers, &self.hihat);
     }
-    fn hihat_open(&self, subscribers: &MutexGuard<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>) {
+    fn hihat_open(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
         send_key(subscribers, &self.hihat_open);
     }
 }
@@ -62,13 +68,10 @@ pub const BEAT_NOTE_MAP_GARAGEBAND: BeatNoteMap = BeatNoteMap {
     hihat_open: Note::As(1),
 };
 
-pub fn play_example_pattern(
-    beat_note_map: &BeatNoteMap,
-    subscribers: Arc<Mutex<HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>>>,
-) {
+pub fn play_example_pattern(beat_note_map: &BeatNoteMap, subscribers: Arc<RwLock<SubscriberMap>>) {
     loop {
         let interval = 300;
-        let subscribers = subscribers.lock().unwrap();
+        let subscribers = subscribers.read().unwrap();
         // 1--
         beat_note_map.kick(&subscribers);
         beat_note_map.hihat(&subscribers);
@@ -116,4 +119,40 @@ pub fn play_example_pattern(
         beat_note_map.hihat_open(&subscribers);
         thread::sleep(Duration::from_millis(interval));
     }
+}
+
+macro_rules! beat {
+    ($channel:expr, $note:expr, $velocity:expr) => {
+        Some(Beat {
+            channel: $channel,
+            note: $note,
+            velocity: $velocity,
+        })
+    };
+}
+
+pub fn create_example_track_kick_snare() -> DrumTrack {
+    DrumTrack::with_beats(&[
+        beat!(9, Note::C(1), 80),
+        None,
+        beat!(9, Note::Cs(1), 80),
+        None,
+        beat!(9, Note::C(1), 80),
+        beat!(9, Note::C(1), 80),
+        beat!(9, Note::Cs(1), 80),
+        None,
+    ])
+}
+
+pub fn create_example_track_hihat() -> DrumTrack {
+    DrumTrack::with_beats(&[
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::D(1), 80),
+        beat!(9, Note::Ds(1), 80),
+    ])
 }

@@ -1,4 +1,12 @@
-use crate::beatmaker::pattern::BEAT_NOTE_MAP_BITWIG;
+use crate::{
+    beatmaker::{
+        self,
+        pattern::{
+            create_example_track_hihat, create_example_track_kick_snare, BEAT_NOTE_MAP_BITWIG,
+        },
+    },
+    project::Project,
+};
 use jack::{Frames, RawMidi};
 
 use crate::{
@@ -97,23 +105,20 @@ fn process_beatmaker(
     port: &mut jack::Port<jack::MidiOut>,
     process_scope: &jack::ProcessScope,
 ) -> SSResult<()> {
-    match &subscription.try_recv() {
-        Ok(event) => {
-            println!("BeatMaker: subscription ID: {:?}", subscription.id());
-            println!("BeatMaker: Received event from: {:?}", event);
-            let data = event.to_data()?;
-            println!("BeatMaker: MIDI data: {:?}", data);
-            let time = match event {
-                ChannelVoiceEvent::NoteOff { .. } => 1,
-                _ => 0,
-            };
-            let raw_midi = RawMidi { time, bytes: &data };
-            let mut midi_writer = port.writer(process_scope);
-            midi_writer.write(&raw_midi)?;
-        }
-        Err(e) => {
-            // println!("BeatMaker: {:?}", e);
-        }
+    // TODO: Can NOT use while loop to process all messages in the channel.
+    // Find out why.
+    if let Ok(event) = &subscription.try_recv() {
+        println!("BeatMaker: subscription ID: {:?}", subscription.id());
+        println!("BeatMaker: Received event from: {:?}", event);
+        let data = event.to_data()?;
+        println!("BeatMaker: MIDI data: {:?}", data);
+        let time = match event {
+            ChannelVoiceEvent::NoteOff { .. } => 1,
+            _ => 0,
+        };
+        let raw_midi = RawMidi { time, bytes: &data };
+        let mut midi_writer = port.writer(process_scope);
+        midi_writer.write(&raw_midi)?;
     }
     Ok(())
 }
@@ -162,7 +167,7 @@ fn create_ss_jack_client() {
         process_sine_wave(client, &mut out_sinewave, process_scope);
 
         // Midi test
-        let _ = process_midi(state, client, &mut out_midi, process_scope);
+        // let _ = process_midi(state, client, &mut out_midi, process_scope);
         let _ = process_beatmaker(
             &beatmaker_subscription,
             state,
@@ -189,7 +194,27 @@ fn create_ss_jack_client() {
         move |_, _, _| jack::Control::Continue,
     );
 
-    let _ = beatmaker.start(BEAT_NOTE_MAP_BITWIG);
+    // let _ = beatmaker.start_with_beat_note_map(BEAT_NOTE_MAP_BITWIG);
+    let project = Project::new(&beatmaker);
+    // FIXME: This is terrible!
+    let idx = project.add_track();
+    let tracks = project.tracks();
+    {
+        // Darn it, I was missing the square brackets earlier, and this write lock blocks
+        // all read operations!!!
+        let mut tracks_guard = tracks.write().unwrap();
+        let track = tracks_guard.get_mut(idx).unwrap();
+        *track = create_example_track_kick_snare();
+    }
+    let idx = project.add_track();
+    let tracks = project.tracks();
+    {
+        let mut tracks_guard = tracks.write().unwrap();
+        let track = tracks_guard.get_mut(idx).unwrap();
+        *track = create_example_track_hihat();
+    }
+
+    let _ = beatmaker.start(&project);
 
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();

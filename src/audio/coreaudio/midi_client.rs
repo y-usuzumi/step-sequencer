@@ -13,7 +13,7 @@ pub fn create_midi_client() -> SSResult<Client> {
     let source = client.virtual_source("source").unwrap();
 
     let mut beatmaker = BeatMaker::default();
-    let _ = beatmaker.start(BEAT_NOTE_MAP_GARAGEBAND);
+    let _ = beatmaker.start_with_beat_note_map(BEAT_NOTE_MAP_GARAGEBAND);
     let beatmaker_subscription = beatmaker.subscribe();
     for event in beatmaker_subscription.iter() {
         println!(
