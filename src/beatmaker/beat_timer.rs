@@ -24,6 +24,9 @@ impl BeatTimer {
     where
         T: Fn(u64),
     {
+        // This method might pose a problem when the old tempo is very low, since
+        // the tempo change needs to wait until the current `thread::sleep` is done
+        // ... maybe a per-millisecond tick is better?
         let mut current_beat = 0;
         let mut next_time =
             Instant::now() + bpm_to_duration(self.project_settings.read().unwrap().tempo);
