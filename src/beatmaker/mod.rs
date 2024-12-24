@@ -34,17 +34,15 @@ fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
 type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
 
 pub struct BeatMaker {
-    bpm: u32,
     subscribers: Arc<RwLock<SubscriberMap>>,
-    id_counter: u32,
+    next_subscriber_id: u32,
 }
 
 impl Default for BeatMaker {
     fn default() -> Self {
         BeatMaker {
-            bpm: 110,
             subscribers: Arc::new(RwLock::new(HashMap::new())),
-            id_counter: 0,
+            next_subscriber_id: 0,
         }
     }
 }
@@ -53,25 +51,24 @@ impl BeatMaker {
     pub fn subscribe(&mut self) -> BeatMakerSubscription {
         let mut subscriber_map = self.subscribers.write().unwrap();
         let (sender, receiver) = mpsc::channel();
-        subscriber_map.insert(self.id_counter, sender);
+        subscriber_map.insert(self.next_subscriber_id, sender);
 
         let subscription = BeatMakerSubscription {
-            id: self.id_counter,
+            id: self.next_subscriber_id,
             receiver,
             subscribers: self.subscribers.clone(),
         };
-        self.id_counter += 1;
+        self.next_subscriber_id += 1;
         return subscription;
     }
 
     pub fn start(&self, project: &Project) {
         let project_settings = project.project_settings();
-        let tempo = project_settings.read().unwrap().tempo;
-        let beat_timer = BeatTimer::with_bpm(tempo);
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         thread::spawn(move || {
             println!("BeatMaker started");
+            let beat_timer = BeatTimer::with_project_settings(project_settings);
             beat_timer.run_forever(|current_beats| {
                 println!("🥁 {}", current_beats);
                 let subscribers = subscribers.read().unwrap();

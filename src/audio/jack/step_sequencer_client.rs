@@ -219,10 +219,26 @@ fn create_ss_jack_client() {
     // 3. Activate the client, which starts the processing.
     let active_client = client.activate_async((), process).unwrap();
 
-    // 4. Wait for user input to quit
-    println!("Press enter/return to quit...");
     let mut user_input = String::new();
-    io::stdin().read_line(&mut user_input).ok();
+    loop {
+        // 4. Wait for user input to quit
+        println!("Enter a command (Q/q to quit)...");
+        io::stdin().read_line(&mut user_input).ok();
+        match user_input.as_str() {
+            "q\n" | "Q\n" => {
+                break;
+            }
+            input => {
+                if let Ok(tempo) = input.trim_end().parse() {
+                    println!("Setting tempo to {}", tempo);
+                    project.project_settings().write().unwrap().tempo = tempo;
+                } else {
+                    println!("Command error: {}", input)
+                }
+            }
+        }
+        user_input.clear();
+    }
 
     // 5. Not needed as the async client will cease processing on `drop`.
     if let Err(err) = active_client.deactivate() {
