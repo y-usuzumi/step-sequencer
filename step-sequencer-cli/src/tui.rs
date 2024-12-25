@@ -244,14 +244,19 @@ impl<'a> Tui<'a> {
         let areas = horizontal.split(operation_area);
         let active_idx = (current_beat as usize) % total_beats;
         for idx in 0..total_beats {
-            let block = Block::new();
+            let block = Block::new().padding(Padding::uniform(1));
             frame.render_widget(&block, areas[idx]);
             let area = block.inner(areas[idx]);
-            let widget = if idx == active_idx {
-                SolidBox::color(Color::LightMagenta)
+            let widget = if let Some(_) = track.get(idx) {
+                if idx == active_idx {
+                    SolidBox::color(Color::LightMagenta)
+                } else {
+                    SolidBox::color(Color::LightBlue)
+                }
             } else {
-                SolidBox::color(Color::LightBlue)
+                SolidBox::color(Color::Black)
             };
+
             frame.render_widget(widget, area);
         }
     }
