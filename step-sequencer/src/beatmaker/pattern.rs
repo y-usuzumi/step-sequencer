@@ -140,7 +140,7 @@ pub struct ExampleDiscoDrumTracks {
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     fn kick(&self) -> DrumTrack {
         DrumTrack::with_beats(
-            "Drum",
+            "Kick",
             &[
                 self.kick, None, None, None, self.kick, self.kick, None, None,
             ],
