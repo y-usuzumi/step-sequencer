@@ -1,13 +1,38 @@
-use std::io;
+mod tui;
+use std::sync::{
+    mpsc::{self, Sender},
+    OnceLock,
+};
 
-use log::{error, info};
-use step_sequencer::{audio::{create_ss_client, Command}, beatmaker::{pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND}, BeatMaker}, project::Project, SSResult};
+use log::info;
+use step_sequencer::{
+    audio::{create_ss_client, Command},
+    beatmaker::{
+        pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
+        BeatMaker,
+    },
+    project::Project,
+    SSResult,
+};
+use tui::{Tui, TuiLogger};
+
+fn create_tui_logger(sender: Sender<String>) -> &'static TuiLogger {
+    static TUI_LOGGER: OnceLock<TuiLogger> = OnceLock::new();
+    TUI_LOGGER.get_or_init(|| TuiLogger::new(sender))
+}
 
 fn main() -> SSResult<()> {
-    env_logger::init();
+    // Need to use a more versatile logger to be able to write to logger in tui.
+    // Now disabling env_logger temporarily and write only to my tui custom logger.
+    // env_logger::init();
+    let (tx, rx) = mpsc::channel();
+    let logger = create_tui_logger(tx);
+    log::set_logger(logger)
+        .map(|()| log::set_max_level(log::LevelFilter::Info))
+        .unwrap();
     let beatmaker = BeatMaker::default();
     let project = Project::new();
-    let example_drumtracks = if cfg!(target_os="linux") {
+    let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
     } else {
         &EXAMPLE_DRUMTRACKS_GARAGEBAND
@@ -15,25 +40,22 @@ fn main() -> SSResult<()> {
     for track in example_drumtracks.all_tracks() {
         project.add_track(track);
     }
-    let mut ss_client = create_ss_client(beatmaker, project)?;
+    let mut ss_client = create_ss_client(beatmaker, &project)?;
     ss_client.start()?;
-    let mut user_input = String::new();
-    loop {
-        // 4. Wait for user input to quit
-        println!("Enter a command (Q/q to quit)...");
-        io::stdin().read_line(&mut user_input).ok();
-        match user_input.trim_end() {
-            "q" | "Q" => {
-                ss_client.stop()?;
-                break;
-            }
-            input => {
-                if let Ok(tempo) = input.parse::<u16>() {
-                    ss_client.send_command(Command::ChangeTempo(tempo))?;
-                }
-            }
-        }
-        user_input.clear();
+    let mut tui = Tui::new(&project);
+    tui.run_tui(rx, |s: &str| {
+        let command = str_to_command(s)?;
+        info!("Running command: {:?}", command);
+        ss_client.send_command(command)
+    })
+}
+
+fn str_to_command(s: &str) -> SSResult<Command> {
+    if let Ok(tempo) = s.parse::<u16>() {
+        Ok(Command::ChangeTempo(tempo))
+    } else {
+        Err(step_sequencer::error::SSError::InvalidCommand(
+            s.to_string(),
+        ))
     }
-    Ok(())
 }

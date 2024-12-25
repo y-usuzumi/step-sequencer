@@ -15,7 +15,7 @@ use std::io;
 
 pub struct SSJackClient {
     beatmaker: BeatMaker,
-    project: Project
+    project: Project,
 }
 
 impl SSJackClient {
@@ -35,9 +35,7 @@ impl SSClient for SSJackClient {
         todo!("See code below: active_client.deactivate()");
     }
 
-    fn send_command(&mut self, command: &str) -> SSResult<()> {
-
-    }
+    fn send_command(&self, command: &str) -> SSResult<()> {}
 }
 
 struct TestState {

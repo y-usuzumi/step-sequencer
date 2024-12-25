@@ -10,20 +10,19 @@ use coremidi::{Client, PacketBuffer};
 use log::{debug, info};
 use std::f64::consts::PI;
 use std::thread;
-use std::time::Duration;
 
-pub struct SSCoreAudioClient {
+pub struct SSCoreAudioClient<'a> {
     beatmaker: BeatMaker,
-    project: Project
+    project: &'a Project,
 }
 
-impl SSCoreAudioClient {
-    pub fn new(beatmaker: BeatMaker, project: Project) -> Self {
+impl<'a> SSCoreAudioClient<'a> {
+    pub fn new(beatmaker: BeatMaker, project: &'a Project) -> Self {
         Self { beatmaker, project }
     }
 }
 
-impl SSClient for SSCoreAudioClient {
+impl<'a> SSClient for SSCoreAudioClient<'a> {
     fn start(&mut self) -> SSResult<()> {
         info!("Running midi client");
         let beatmaker_subscription = self.beatmaker.subscribe();
@@ -59,7 +58,7 @@ impl SSClient for SSCoreAudioClient {
         Ok(())
     }
 
-    fn send_command(&mut self, command: Command) -> SSResult<()> {
+    fn send_command(&self, command: Command) -> SSResult<()> {
         match command {
             Command::ChangeTempo(tempo) => {
                 let project_settings = self.project.project_settings();

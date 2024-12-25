@@ -1,6 +1,12 @@
-use std::{collections::HashMap, sync::{Arc, RwLock}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
-use crate::{drum_track::DrumTrack, id::{new_id, SSId}};
+use crate::{
+    drum_track::DrumTrack,
+    id::{new_id, SSId},
+};
 
 type TrackMap = HashMap<SSId, DrumTrack>;
 
@@ -11,11 +17,15 @@ pub struct Project {
 
 pub struct ProjectSettings {
     pub tempo: u16,
+    pub current_beats: Arc<RwLock<u64>>,
 }
 
 impl Default for ProjectSettings {
     fn default() -> Self {
-        Self { tempo: 110 }
+        Self {
+            tempo: 110,
+            current_beats: Arc::new(RwLock::new(0)),
+        }
     }
 }
 

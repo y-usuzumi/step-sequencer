@@ -11,6 +11,8 @@ pub enum SSError {
     JackError(#[from] jack::Error),
     #[error("IO error: `{0}`")]
     IOError(#[from] io::Error),
+    #[error("Invalid command: `{0}`")]
+    InvalidCommand(String),
     #[error("Unsupported platform: `{0}`")]
     UnsupportedPlatform(String),
     #[error("Unknown: `{0}`")]

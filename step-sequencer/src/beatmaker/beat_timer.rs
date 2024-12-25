@@ -35,6 +35,13 @@ impl BeatTimer {
             thread::sleep(next_time - Instant::now());
             next_time += bpm_to_duration(self.project_settings.read().unwrap().tempo);
             current_beat += 1;
+            *self
+                .project_settings
+                .read()
+                .unwrap()
+                .current_beats
+                .write()
+                .unwrap() = current_beat;
         }
     }
 }
