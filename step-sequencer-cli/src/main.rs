@@ -26,8 +26,8 @@ fn main() -> SSResult<()> {
     // Need to use a more versatile logger to be able to write to logger in tui.
     // Now disabling env_logger temporarily and write only to my tui custom logger.
     // env_logger::init();
-    let (tx, rx) = mpsc::channel();
-    let logger = create_tui_logger(tx);
+    let (tui_log_sender, tui_log_receiver) = mpsc::channel();
+    let logger = create_tui_logger(tui_log_sender);
     log::set_logger(logger)
         .map(|()| log::set_max_level(log::LevelFilter::Info))
         .unwrap();
@@ -41,10 +41,11 @@ fn main() -> SSResult<()> {
     for track in example_drumtracks.all_tracks() {
         project.add_track(track);
     }
+    let beat_receiver = beatmaker.subscribe_beats();
     let mut ss_client = create_ss_client(beatmaker, &project)?;
     ss_client.start()?;
     let mut tui = Tui::new(&project);
-    tui.run_tui(rx, |s: &str| {
+    tui.run_tui(beat_receiver, tui_log_receiver, |s: &str| {
         let command = str_to_command(s)?;
         info!("Running command: {:?}", command);
         ss_client.send_command(command)

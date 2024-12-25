@@ -134,56 +134,38 @@ pub struct ExampleDiscoDrumTracks {
     kick: Option<Beat>,
     snare: Option<Beat>,
     hihat: Option<Beat>,
-    hihat_open: Option<Beat>
+    hihat_open: Option<Beat>,
 }
 
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     fn kick(&self) -> DrumTrack {
-        DrumTrack::with_beats(&[
-            self.kick,
-            None,
-            None,
-            None,
-            self.kick,
-            self.kick,
-            None,
-            None
-        ])
+        DrumTrack::with_beats(
+            "Drum",
+            &[
+                self.kick, None, None, None, self.kick, self.kick, None, None,
+            ],
+        )
     }
 
     fn snare(&self) -> DrumTrack {
-        DrumTrack::with_beats(&[
-            None,
-            None,
-            self.snare,
-            None
-        ])
+        DrumTrack::with_beats("Snare", &[None, None, self.snare, None])
     }
 
     fn hihat(&self) -> DrumTrack {
-        DrumTrack::with_beats(&[
-            self.hihat,
-            self.hihat,
-            self.hihat,
-            self.hihat,
-            self.hihat,
-            self.hihat,
-            self.hihat,
-            None
-        ])
+        DrumTrack::with_beats(
+            "Hi-hat open",
+            &[
+                self.hihat, self.hihat, self.hihat, self.hihat, self.hihat, self.hihat, self.hihat,
+                None,
+            ],
+        )
     }
 
     fn hihat_open(&self) -> DrumTrack {
-        DrumTrack::with_beats(&[
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            self.hihat_open
-        ])
+        DrumTrack::with_beats(
+            "Hi-hat closed",
+            &[None, None, None, None, None, None, None, self.hihat_open],
+        )
     }
 }
 

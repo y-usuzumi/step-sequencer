@@ -1,14 +1,13 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-};
+use std::sync::{Arc, RwLock};
+
+use indexmap::IndexMap;
 
 use crate::{
     drum_track::DrumTrack,
     id::{new_id, SSId},
 };
 
-type TrackMap = HashMap<SSId, DrumTrack>;
+type TrackMap = IndexMap<SSId, DrumTrack>;
 
 pub struct Project {
     tracks: Arc<RwLock<TrackMap>>,
@@ -32,7 +31,7 @@ impl Default for ProjectSettings {
 impl Project {
     pub fn new() -> Self {
         Self {
-            tracks: Arc::new(RwLock::new(HashMap::new())),
+            tracks: Arc::new(RwLock::new(IndexMap::new())),
             project_settings: Arc::new(RwLock::new(ProjectSettings::default())),
         }
     }
@@ -45,7 +44,7 @@ impl Project {
     }
 
     pub fn add_empty_track(&self) -> SSId {
-        self.add_track(DrumTrack::new())
+        self.add_track(DrumTrack::new("Unnamed"))
     }
 
     pub fn project_settings(&self) -> Arc<RwLock<ProjectSettings>> {

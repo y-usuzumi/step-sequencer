@@ -36,6 +36,7 @@ type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
 
 pub struct BeatMaker {
     subscribers: Arc<RwLock<SubscriberMap>>,
+    beat_subscribers: Arc<RwLock<Vec<mpsc::Sender<u64>>>>,
     next_subscriber_id: u32,
 }
 
@@ -43,6 +44,7 @@ impl Default for BeatMaker {
     fn default() -> Self {
         BeatMaker {
             subscribers: Arc::new(RwLock::new(HashMap::new())),
+            beat_subscribers: Arc::new(RwLock::new(Vec::new())),
             next_subscriber_id: 0,
         }
     }
@@ -63,20 +65,36 @@ impl BeatMaker {
         return subscription;
     }
 
+    pub fn subscribe_beats(&self) -> mpsc::Receiver<u64> {
+        let mut beat_subscribers = self.beat_subscribers.write().unwrap();
+        let (sender, receiver) = mpsc::channel();
+        beat_subscribers.push(sender);
+        return receiver;
+    }
+
     pub fn start(&self, project: &Project) {
         let project_settings = project.project_settings();
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
+        let beat_subscribers = self.beat_subscribers.clone();
         thread::spawn(move || {
             info!("BeatMaker started");
             let beat_timer = BeatTimer::with_project_settings(project_settings);
             beat_timer.run_forever(|current_beats| {
                 debug!("🥁 {}", current_beats);
-                let subscribers = subscribers.read().unwrap();
-                for track in tracks.read().unwrap().values() {
-                    let beat_idx = current_beats as usize % track.total_beats();
-                    if let Some(beat) = track.get(beat_idx) {
-                        send_beat(&subscribers, beat);
+                {
+                    let subscribers = subscribers.read().unwrap();
+                    for track in tracks.read().unwrap().values() {
+                        let beat_idx = current_beats as usize % track.total_beats();
+                        if let Some(beat) = track.get(beat_idx) {
+                            send_beat(&subscribers, beat);
+                        }
+                    }
+                }
+                {
+                    let beat_subscribers = beat_subscribers.read().unwrap();
+                    for beat_subscriber in beat_subscribers.iter() {
+                        beat_subscriber.send(current_beats);
                     }
                 }
             });

@@ -12,10 +12,12 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Gauge, List, ListItem, Padding, Paragraph},
+    widgets::{Block, Borders, Gauge, List, ListItem, Padding, Paragraph},
     Frame,
 };
-use step_sequencer::{drum_track::DrumTrack, error::SSError, project::Project, SSResult};
+use step_sequencer::{
+    beatmaker::BeatMaker, drum_track::DrumTrack, error::SSError, project::Project, SSResult,
+};
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
@@ -77,10 +79,16 @@ impl log::Log for TuiLogger {
 enum TuiEvent {
     LogEvent(String),
     TerminalEvent(Event),
+    Redraw,
 }
 
 impl<'a> Tui<'a> {
-    pub fn run_tui<F>(&mut self, log_receiver: Receiver<String>, command_handler: F) -> SSResult<()>
+    pub fn run_tui<F>(
+        &mut self,
+        beat_receiver: Receiver<u64>,
+        log_receiver: Receiver<String>,
+        command_handler: F,
+    ) -> SSResult<()>
     where
         F: Fn(&str) -> SSResult<()>,
     {
@@ -94,9 +102,17 @@ impl<'a> Tui<'a> {
                 }
             });
         }
+        {
+            let event_sender = event_sender.clone();
+            thread::spawn(move || loop {
+                let event = event::read().unwrap();
+                event_sender.send(TuiEvent::TerminalEvent(event));
+            });
+        }
         thread::spawn(move || loop {
-            let event = event::read().unwrap();
-            event_sender.send(TuiEvent::TerminalEvent(event));
+            if let Ok(current_beats) = beat_receiver.recv() {
+                event_sender.send(TuiEvent::Redraw);
+            }
         });
 
         loop {
@@ -148,6 +164,7 @@ impl<'a> Tui<'a> {
                             }
                         }
                     }
+                    TuiEvent::Redraw => {}
                 }
             }
         }
@@ -188,6 +205,12 @@ impl<'a> Tui<'a> {
             self.logs
                 .drain(0..(self.logs.len() - (logging_area.height - 2) as usize));
         }
+        let operation_area_block = Block::new()
+            .borders(Borders::ALL)
+            .title("Tracks")
+            .padding(Padding::uniform(1));
+        frame.render_widget(&operation_area_block, operation_area);
+        let operation_area = operation_area_block.inner(operation_area);
         let binding = self.project.tracks();
         let tracks = binding.read().unwrap();
         let operation_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
@@ -213,17 +236,23 @@ impl<'a> Tui<'a> {
         current_beat: u64,
         operation_area: Rect,
     ) {
+        let border = Block::new().borders(Borders::ALL).title(track.name());
+        frame.render_widget(&border, operation_area);
+        let operation_area = border.inner(operation_area);
         let total_beats = track.total_beats();
-        let vertical = Layout::horizontal(vec![Constraint::Fill(1); total_beats]);
-        let areas = vertical.split(operation_area);
+        let horizontal = Layout::horizontal(vec![Constraint::Fill(1); total_beats]);
+        let areas = horizontal.split(operation_area);
         let active_idx = (current_beat as usize) % total_beats;
         for idx in 0..total_beats {
+            let block = Block::new();
+            frame.render_widget(&block, areas[idx]);
+            let area = block.inner(areas[idx]);
             let widget = if idx == active_idx {
                 SolidBox::color(Color::LightMagenta)
             } else {
                 SolidBox::color(Color::LightBlue)
             };
-            frame.render_widget(widget, areas[idx]);
+            frame.render_widget(widget, area);
         }
     }
 

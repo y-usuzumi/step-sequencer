@@ -1,6 +1,7 @@
 use crate::midi::{note::Note, Channel, Velocity};
 
 pub struct DrumTrack {
+    name: String,
     beats: Vec<Option<Beat>>,
 }
 
@@ -12,20 +13,29 @@ pub struct Beat {
 }
 
 impl DrumTrack {
-    pub fn new() -> Self {
-        Self { beats: Vec::new() }
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            beats: Vec::new(),
+        }
     }
 
-    pub fn with_initial_beats(beats: usize) -> Self {
+    pub fn with_initial_beats(name: &str, beats: usize) -> Self {
         Self {
+            name: name.to_string(),
             beats: vec![None; beats],
         }
     }
 
-    pub fn with_beats(beats: &[Option<Beat>]) -> Self {
+    pub fn with_beats(name: &str, beats: &[Option<Beat>]) -> Self {
         Self {
+            name: name.to_string(),
             beats: beats.to_vec(),
         }
+    }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn assign_beat(&mut self, idx: usize, beat: Beat) {
