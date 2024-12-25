@@ -9,15 +9,17 @@ use std::{
 
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Gauge, List, ListItem, Padding, Paragraph},
     Frame,
 };
-use step_sequencer::{error::SSError, project::Project, SSResult};
+use step_sequencer::{drum_track::DrumTrack, error::SSError, project::Project, SSResult};
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
+
+use crate::widgets::SolidBox;
 
 pub(crate) struct Tui<'a> {
     input: Input,
@@ -153,8 +155,6 @@ impl<'a> Tui<'a> {
         Ok(())
     }
 
-    fn process_command(&self, s: String) {}
-
     fn append_log(&mut self, log: String) {
         self.logs.push(log);
     }
@@ -188,36 +188,43 @@ impl<'a> Tui<'a> {
             self.logs
                 .drain(0..(self.logs.len() - (logging_area.height - 2) as usize));
         }
-        let track_count = { self.project.tracks().read().unwrap().len() };
-        let operation_layout = Layout::vertical(vec![Constraint::Fill(1); track_count]);
-        let track_areas = operation_layout.split(operation_area);
-
-        for (idx, gauge) in self.track_widgets().iter().enumerate() {
-            frame.render_widget(gauge, track_areas[idx]);
-        }
-        frame.render_widget(self.log_widget(), logging_area);
-        frame.render_widget(self.command_area_widget(), command_area);
-    }
-
-    fn track_widgets(&self) -> Vec<Gauge> {
         let binding = self.project.tracks();
         let tracks = binding.read().unwrap();
-        let current_beats = {
+        let operation_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
+        let track_areas = operation_layout.split(operation_area);
+        let current_beat = {
             let binding = self.project.project_settings();
             let binding = binding.read().unwrap();
             let x = *binding.current_beats.read().unwrap();
             x
         };
-        tracks
-            .values()
-            .map(|track| {
-                let total = track.total_beats();
-                let current = (current_beats as usize) % total;
-                Gauge::default()
-                    .gauge_style(Color::Rgb(48, 48, 84))
-                    .percent((current * 100 / total) as u16)
-            })
-            .collect()
+
+        for (track, area) in tracks.values().zip(track_areas.into_iter()) {
+            self.render_track(frame, track, current_beat, *area);
+        }
+        frame.render_widget(self.log_widget(), logging_area);
+        frame.render_widget(self.command_area_widget(), command_area);
+    }
+
+    fn render_track(
+        &self,
+        frame: &mut Frame,
+        track: &DrumTrack,
+        current_beat: u64,
+        operation_area: Rect,
+    ) {
+        let total_beats = track.total_beats();
+        let vertical = Layout::horizontal(vec![Constraint::Fill(1); total_beats]);
+        let areas = vertical.split(operation_area);
+        let active_idx = (current_beat as usize) % total_beats;
+        for idx in 0..total_beats {
+            let widget = if idx == active_idx {
+                SolidBox::color(Color::LightMagenta)
+            } else {
+                SolidBox::color(Color::LightBlue)
+            };
+            frame.render_widget(widget, areas[idx]);
+        }
     }
 
     fn log_widget(&self) -> List {

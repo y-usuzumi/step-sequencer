@@ -1,4 +1,5 @@
 mod tui;
+mod widgets;
 use std::sync::{
     mpsc::{self, Sender},
     OnceLock,
