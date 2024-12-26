@@ -143,6 +143,36 @@ impl<'a> SSClient for SSJackClient<'a> {
                 let project_settings = self.project.project_settings();
                 project_settings.write().unwrap().tempo = tempo;
             }
+            Command::ToggleBeat(track, beat) => {
+                let binding = self.project.tracks();
+                let mut trackmap = binding.write().unwrap();
+                let mut tracks = trackmap.values_mut();
+                for _ in 0..track {
+                    tracks.next();
+                }
+                let track = tracks.next().ok_or(SSError::CommandError(
+                    crate::error::CommandError::CommandExecutionError(
+                        command,
+                        format!("Track {} does not exist", track),
+                    ),
+                ))?;
+                track.toggle_beat(beat);
+            }
+            Command::Resize(track, size) => {
+                let binding = self.project.tracks();
+                let mut trackmap = binding.write().unwrap();
+                let mut tracks = trackmap.values_mut();
+                for _ in 0..track {
+                    tracks.next();
+                }
+                let track = tracks.next().ok_or(SSError::CommandError(
+                    crate::error::CommandError::CommandExecutionError(
+                        command,
+                        format!("Track {} does not exist", track),
+                    ),
+                ))?;
+                track.resize(size);
+            }
         }
 
         Ok(())

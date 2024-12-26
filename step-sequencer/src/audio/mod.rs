@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::{beatmaker::BeatMaker, project::Project, SSResult};
 #[cfg(target_os = "macos")]
 mod coreaudio;
@@ -7,6 +9,14 @@ mod jack;
 #[derive(Clone, Debug)]
 pub enum Command {
     ChangeTempo(u16),
+    ToggleBeat(usize, usize),
+    Resize(usize, usize),
+}
+
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub trait SSClient {

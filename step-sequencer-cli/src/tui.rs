@@ -1,9 +1,5 @@
 use std::{
-    rc::Rc,
-    sync::{
-        mpsc::{self, Receiver, Sender},
-        Arc, RwLock,
-    },
+    sync::mpsc::{self, Receiver, Sender},
     thread,
 };
 
@@ -12,16 +8,19 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, List, ListItem, Padding, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
     Frame,
 };
 use step_sequencer::{
-    beatmaker::BeatMaker, drum_track::DrumTrack, error::SSError, project::Project, SSResult,
+    drum_track::{DrumTrack, DrumTrackBeat},
+    error::SSError,
+    project::Project,
+    SSResult,
 };
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
-use crate::widgets::SolidBox;
+use crate::widgets::BeatPad;
 
 pub(crate) struct Tui<'a> {
     input: Input,
@@ -247,15 +246,31 @@ impl<'a> Tui<'a> {
             let block = Block::new().padding(Padding::uniform(1));
             frame.render_widget(&block, areas[idx]);
             let area = block.inner(areas[idx]);
-            let widget = if let Some(_) = track.get(idx) {
-                if idx == active_idx {
-                    SolidBox::color(Color::LightMagenta)
-                } else {
-                    SolidBox::color(Color::LightBlue)
+            let is_active_beat = idx == active_idx;
+            let color = match track.get(idx) {
+                DrumTrackBeat::Unset => {
+                    if is_active_beat {
+                        Color::DarkGray
+                    } else {
+                        Color::Black
+                    }
                 }
-            } else {
-                SolidBox::color(Color::Black)
+                DrumTrackBeat::DefaultBeat => {
+                    if is_active_beat {
+                        Color::LightBlue
+                    } else {
+                        Color::LightMagenta
+                    }
+                }
+                DrumTrackBeat::OverrideBeat(_) => {
+                    if is_active_beat {
+                        Color::LightBlue
+                    } else {
+                        Color::LightRed
+                    }
+                }
             };
+            let widget = BeatPad::color(color).set_active(is_active_beat);
 
             frame.render_widget(widget, area);
         }

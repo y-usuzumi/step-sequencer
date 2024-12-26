@@ -12,7 +12,6 @@ use std::{
 
 use beat_timer::BeatTimer;
 use log::{debug, info};
-use pattern::{play_example_pattern, BeatNoteMap};
 
 use crate::{drum_track::Beat, midi::ChannelVoiceEvent, project::Project, SSResult};
 
@@ -86,8 +85,8 @@ impl BeatMaker {
                     let subscribers = subscribers.read().unwrap();
                     for track in tracks.read().unwrap().values() {
                         let beat_idx = current_beats as usize % track.total_beats();
-                        if let Some(beat) = track.get(beat_idx) {
-                            send_beat(&subscribers, beat);
+                        if let Some(beat) = track.get_as_beat(beat_idx) {
+                            send_beat(&subscribers, &beat);
                         }
                     }
                 }
@@ -99,19 +98,6 @@ impl BeatMaker {
                 }
             });
         });
-    }
-
-    #[deprecated(note = "Now for test only")]
-    pub fn start_with_beat_note_map(
-        &self,
-        beat_note_map: BeatNoteMap,
-    ) -> SSResult<BeatMakerAsyncHandle> {
-        let subscribers = self.subscribers.clone();
-
-        let thread_handle = thread::spawn(move || {
-            play_example_pattern(&beat_note_map, subscribers);
-        });
-        Ok(BeatMakerAsyncHandle)
     }
 }
 

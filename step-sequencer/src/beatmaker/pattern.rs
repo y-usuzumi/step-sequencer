@@ -1,8 +1,4 @@
-use std::{
-    sync::{Arc, RwLock, RwLockReadGuard},
-    thread,
-    time::Duration,
-};
+use std::sync::RwLockReadGuard;
 
 use log::debug;
 
@@ -12,6 +8,7 @@ use crate::{
 };
 
 use crate::drum_track::Beat;
+use crate::drum_track::DrumTrackBeat::*;
 
 use super::SubscriberMap;
 
@@ -34,89 +31,13 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct BeatNoteMap {
-    pub kick: Note,
-    pub hihat: Note,
-    pub snare: Note,
-    pub hihat_open: Note,
-}
-
-impl BeatNoteMap {
-    fn kick(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
-        send_key(subscribers, &self.kick);
-    }
-    fn snare(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
-        send_key(subscribers, &self.snare);
-    }
-    fn hihat(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
-        send_key(subscribers, &self.hihat);
-    }
-    fn hihat_open(&self, subscribers: &RwLockReadGuard<SubscriberMap>) {
-        send_key(subscribers, &self.hihat_open);
-    }
-}
-
-pub fn play_example_pattern(beat_note_map: &BeatNoteMap, subscribers: Arc<RwLock<SubscriberMap>>) {
-    loop {
-        let interval = 300;
-        let subscribers = subscribers.read().unwrap();
-        // 1--
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.snare(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        // 2--
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.snare(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        // 3--
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.snare(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        // 4--
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.kick(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.snare(&subscribers);
-        beat_note_map.hihat(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-        beat_note_map.hihat_open(&subscribers);
-        thread::sleep(Duration::from_millis(interval));
-    }
-}
-
 macro_rules! beat {
     ($channel:expr, $note:expr, $velocity:expr) => {
-        Some(Beat {
+        Beat {
             channel: $channel,
             note: $note,
             velocity: $velocity,
-        })
+        }
     };
 }
 
@@ -131,40 +52,56 @@ pub trait ExampleDrumTracks {
 }
 
 pub struct ExampleDiscoDrumTracks {
-    kick: Option<Beat>,
-    snare: Option<Beat>,
-    hihat: Option<Beat>,
-    hihat_open: Option<Beat>,
+    kick: Beat,
+    snare: Beat,
+    hihat: Beat,
+    hihat_open: Beat,
 }
 
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     fn kick(&self) -> DrumTrack {
         DrumTrack::with_beats(
             "Kick",
+            self.kick,
             &[
-                self.kick, None, None, None, self.kick, self.kick, None, None,
+                DefaultBeat,
+                Unset,
+                Unset,
+                Unset,
+                DefaultBeat,
+                DefaultBeat,
+                Unset,
+                Unset,
             ],
         )
     }
 
     fn snare(&self) -> DrumTrack {
-        DrumTrack::with_beats("Snare", &[None, None, self.snare, None])
+        DrumTrack::with_beats("Snare", self.snare, &[Unset, Unset, DefaultBeat, Unset])
     }
 
     fn hihat(&self) -> DrumTrack {
         DrumTrack::with_beats(
-            "Hi-hat open",
+            "Hi-hat closed",
+            self.hihat,
             &[
-                self.hihat, self.hihat, self.hihat, self.hihat, self.hihat, self.hihat, self.hihat,
-                None,
+                DefaultBeat,
+                DefaultBeat,
+                DefaultBeat,
+                DefaultBeat,
+                DefaultBeat,
+                DefaultBeat,
+                DefaultBeat,
+                Unset,
             ],
         )
     }
 
     fn hihat_open(&self) -> DrumTrack {
         DrumTrack::with_beats(
-            "Hi-hat closed",
-            &[None, None, None, None, None, None, None, self.hihat_open],
+            "Hi-hat open",
+            self.hihat_open,
+            &[Unset, Unset, Unset, Unset, Unset, Unset, Unset, DefaultBeat],
         )
     }
 }

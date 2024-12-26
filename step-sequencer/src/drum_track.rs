@@ -1,11 +1,23 @@
-use crate::midi::{note::Note, Channel, Velocity};
+use self::DrumTrackBeat::*;
+use crate::{
+    consts,
+    midi::{note::Note, Channel, Velocity},
+};
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum DrumTrackBeat {
+    Unset,
+    DefaultBeat,
+    OverrideBeat(Beat),
+}
 
 pub struct DrumTrack {
     name: String,
-    beats: Vec<Option<Beat>>,
+    default_beat: Beat,
+    beats: Vec<DrumTrackBeat>,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Beat {
     pub channel: Channel,
     pub note: Note,
@@ -14,22 +26,16 @@ pub struct Beat {
 
 impl DrumTrack {
     pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            beats: Vec::new(),
-        }
+        Self::with_default_beat(name, consts::TRACK_DEFAULT_BEAT)
+    }
+    pub fn with_default_beat(name: &str, default_beat: Beat) -> Self {
+        Self::with_beats(name, default_beat, &[])
     }
 
-    pub fn with_initial_beats(name: &str, beats: usize) -> Self {
+    pub fn with_beats(name: &str, default_beat: Beat, beats: &[DrumTrackBeat]) -> Self {
         Self {
             name: name.to_string(),
-            beats: vec![None; beats],
-        }
-    }
-
-    pub fn with_beats(name: &str, beats: &[Option<Beat>]) -> Self {
-        Self {
-            name: name.to_string(),
+            default_beat,
             beats: beats.to_vec(),
         }
     }
@@ -38,29 +44,53 @@ impl DrumTrack {
         self.name.clone()
     }
 
-    pub fn assign_beat(&mut self, idx: usize, beat: Beat) {
-        if self.beats.len() < idx {
-            self.beats.resize(idx + 1, None);
+    pub fn get_default_beat(&self) -> Beat {
+        self.default_beat
+    }
+
+    pub fn set_default_beat(&mut self, beat: Beat) {
+        self.default_beat = beat;
+    }
+
+    pub fn toggle_beat(&mut self, idx: usize) {
+        if let Unset = self.get(idx) {
+            self.assign_beat(idx, DrumTrackBeat::DefaultBeat);
+        } else {
+            self.remove_beat(idx);
+        }
+    }
+
+    pub fn assign_beat(&mut self, idx: usize, beat: DrumTrackBeat) {
+        if self.beats.len() < idx + 1 {
+            self.beats.resize(idx + 1, Unset);
         }
 
-        self.beats[idx] = Some(beat);
+        self.beats[idx] = beat;
     }
 
     pub fn remove_beat(&mut self, idx: usize) {
         if let Some(v) = self.beats.get_mut(idx) {
-            *v = None;
+            *v = Unset;
         }
     }
 
-    pub fn set_total_beats(&mut self, idx: usize) {
-        self.beats.resize(idx, None);
+    pub fn resize(&mut self, size: usize) {
+        self.beats.resize(size, Unset);
     }
 
     pub fn total_beats(&self) -> usize {
         self.beats.len()
     }
 
-    pub fn get(&self, idx: usize) -> Option<&Beat> {
-        self.beats.get(idx).unwrap_or(&None).as_ref()
+    pub fn get(&self, idx: usize) -> DrumTrackBeat {
+        self.beats.get(idx).unwrap_or(&Unset).clone()
+    }
+
+    pub fn get_as_beat(&self, idx: usize) -> Option<Beat> {
+        match self.get(idx) {
+            Unset => None,
+            DefaultBeat => Some(self.default_beat),
+            OverrideBeat(beat) => Some(beat),
+        }
     }
 }
