@@ -38,13 +38,11 @@ impl BeatTimer {
         for tick in self.timeline_subscription.receiver.iter() {
             match tick {
                 TimelineEvent::Tick(tick) => {
-                    if next_beat_time <= interval.as_millis() * (tick as u128) {
+                    while next_beat_time <= interval.as_millis() * (tick as u128) {
                         on_beat(current_beat);
                         let beat_interval =
                             bpm_to_duration(self.project_settings.read().unwrap().tempo)
                                 .as_millis();
-                        next_beat_time += beat_interval;
-                        current_beat += 1;
                         *self
                             .project_settings
                             .read()
@@ -52,6 +50,8 @@ impl BeatTimer {
                             .current_beats
                             .write()
                             .unwrap() = current_beat;
+                        next_beat_time += beat_interval;
+                        current_beat += 1;
                     }
                 }
                 TimelineEvent::Stop => {}

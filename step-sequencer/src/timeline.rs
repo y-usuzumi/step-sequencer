@@ -24,6 +24,7 @@ pub enum TimelineEvent {
 
 pub struct Timeline {
     interval: Duration,
+    /// This is only updated upon pause/stop
     current_tick: Arc<RwLock<Tick>>,
     idgen: RefCell<AutoIncrementIdGen>,
     start_mutex: Arc<Mutex<bool>>,
@@ -67,9 +68,6 @@ impl Timeline {
             let mut new_current_tick = *last_current_tick.read().unwrap();
             let mut next_tick_time = Instant::now() + interval;
             loop {
-                // if now > next_tick_time {
-                //     warn!("Skipping tick(s) due to slow processing");
-                // }
                 if !*start_mutex.lock().unwrap() {
                     for subscriber in subscribers.read().unwrap().values() {
                         subscriber.send(TimelineEvent::Stop).unwrap();
