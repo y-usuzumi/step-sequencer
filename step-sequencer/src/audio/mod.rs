@@ -8,6 +8,7 @@ mod jack;
 
 #[derive(Clone, Debug)]
 pub enum Command {
+    PlayOrPause,
     ChangeTempo(u16),
     ToggleBeat(usize, usize),
     Resize(usize, usize),
@@ -27,7 +28,7 @@ pub trait SSClient {
 
 #[cfg(target_os = "linux")]
 pub fn create_ss_client<'a>(
-    beatmaker: BeatMaker,
+    beatmaker: BeatMaker<'a>,
     project: &'a Project,
 ) -> SSResult<Box<dyn 'a + SSClient>> {
     use self::jack::SSJackClient;

@@ -4,9 +4,18 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::project::ProjectSettings;
+use derive_builder::Builder;
+use log::{debug, info};
 
+use crate::{
+    project::ProjectSettings,
+    timeline::{TimelineEvent, TimelineSubscription},
+};
+
+#[derive(Builder)]
+#[builder(pattern = "owned")]
 pub struct BeatTimer {
+    timeline_subscription: TimelineSubscription,
     project_settings: Arc<RwLock<ProjectSettings>>,
 }
 
@@ -15,11 +24,6 @@ fn bpm_to_duration(bpm: u16) -> Duration {
 }
 
 impl BeatTimer {
-    pub fn with_project_settings(project_settings: Arc<RwLock<ProjectSettings>>) -> Self {
-        Self {
-            project_settings: project_settings,
-        }
-    }
     pub fn run_forever<T>(&self, on_beat: T)
     where
         T: Fn(u64),
@@ -27,21 +31,31 @@ impl BeatTimer {
         // This method might pose a problem when the old tempo is very low, since
         // the tempo change needs to wait until the current `thread::sleep` is done
         // ... maybe a per-millisecond tick is better?
+
+        let mut next_beat_time = 0;
+        let interval = self.timeline_subscription.interval;
         let mut current_beat = 0;
-        let mut next_time =
-            Instant::now() + bpm_to_duration(self.project_settings.read().unwrap().tempo);
-        loop {
-            on_beat(current_beat);
-            thread::sleep(next_time - Instant::now());
-            next_time += bpm_to_duration(self.project_settings.read().unwrap().tempo);
-            current_beat += 1;
-            *self
-                .project_settings
-                .read()
-                .unwrap()
-                .current_beats
-                .write()
-                .unwrap() = current_beat;
+        for tick in self.timeline_subscription.receiver.iter() {
+            match tick {
+                TimelineEvent::Tick(tick) => {
+                    if next_beat_time <= interval.as_millis() * (tick as u128) {
+                        on_beat(current_beat);
+                        let beat_interval =
+                            bpm_to_duration(self.project_settings.read().unwrap().tempo)
+                                .as_millis();
+                        next_beat_time += beat_interval;
+                        current_beat += 1;
+                        *self
+                            .project_settings
+                            .read()
+                            .unwrap()
+                            .current_beats
+                            .write()
+                            .unwrap() = current_beat;
+                    }
+                }
+                TimelineEvent::Stop => {}
+            }
         }
     }
 }

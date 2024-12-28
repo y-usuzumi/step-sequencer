@@ -14,6 +14,7 @@ use step_sequencer::{
     },
     error::{CommandError, SSError},
     project::Project,
+    timeline::{Timeline, TimelineState},
     SSResult,
 };
 use tui::{Tui, TuiLogger};
@@ -32,7 +33,8 @@ fn main() -> SSResult<()> {
     log::set_logger(logger)
         .map(|()| log::set_max_level(log::LevelFilter::Info))
         .unwrap();
-    let beatmaker = BeatMaker::default();
+    let timeline = Timeline::default();
+    let beatmaker = BeatMaker::new(&timeline);
     let project = Project::new();
     let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
@@ -51,6 +53,18 @@ fn main() -> SSResult<()> {
         match command {
             Err(SSError::CommandError(CommandError::EmptyCommand)) => Ok(()),
             Err(e) => Err(e),
+            Ok(Command::PlayOrPause) => match timeline.state() {
+                TimelineState::Stopped => {
+                    info!("Start");
+                    let _ = timeline.start();
+                    Ok(())
+                }
+                TimelineState::Started => {
+                    info!("Pause");
+                    let _ = timeline.pause();
+                    Ok(())
+                }
+            },
             Ok(command) => ss_client.send_command(command),
         }
     })
@@ -61,6 +75,7 @@ fn str_to_command(s: &str) -> SSResult<Command> {
     if let Some(command) = chunks.next() {
         let args: Vec<&str> = chunks.collect();
         match command {
+            "play" => Ok(Command::PlayOrPause),
             "t" => {
                 if args.len() >= 1 {
                     let tempo = args[0].parse::<u16>()?;

@@ -16,13 +16,13 @@ use crate::{
 };
 
 pub struct SSJackClient<'a> {
-    beatmaker: BeatMaker,
+    beatmaker: BeatMaker<'a>,
     project: &'a Project,
     stop_signal_sender: Option<Sender<()>>,
 }
 
 impl<'a> SSJackClient<'a> {
-    pub fn new(beatmaker: BeatMaker, project: &'a Project) -> Self {
+    pub fn new(beatmaker: BeatMaker<'a>, project: &'a Project) -> Self {
         Self {
             beatmaker,
             project,
@@ -140,10 +140,12 @@ impl<'a> SSClient for SSJackClient<'a> {
         // TODO: Copy-paste from CoreAudio side. Improve the design
         match command {
             Command::ChangeTempo(tempo) => {
+                info!("Changing tempo to: {}", tempo);
                 let project_settings = self.project.project_settings();
                 project_settings.write().unwrap().tempo = tempo;
             }
             Command::ToggleBeat(track, beat) => {
+                info!("Toggling beat {} @ track {}", beat, track);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
                 let mut tracks = trackmap.values_mut();
@@ -159,6 +161,7 @@ impl<'a> SSClient for SSJackClient<'a> {
                 track.toggle_beat(beat);
             }
             Command::Resize(track, size) => {
+                info!("Resizing track {} to {} beats", track, size);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
                 let mut tracks = trackmap.values_mut();
@@ -172,6 +175,9 @@ impl<'a> SSClient for SSJackClient<'a> {
                     ),
                 ))?;
                 track.resize(size);
+            }
+            _ => {
+                error!("Unsupported command: {}", command);
             }
         }
 

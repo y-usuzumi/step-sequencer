@@ -59,6 +59,7 @@ macro_rules! note_func {
     };
 }
 
+#[allow(non_snake_case)]
 impl Note {
     note_func! {C}
     note_func! {Cs}

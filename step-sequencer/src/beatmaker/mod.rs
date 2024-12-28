@@ -10,10 +10,12 @@ use std::{
     thread,
 };
 
-use beat_timer::BeatTimer;
+use beat_timer::BeatTimerBuilder;
 use log::{debug, info};
 
-use crate::{drum_track::Beat, midi::ChannelVoiceEvent, project::Project, SSResult};
+use crate::{
+    drum_track::Beat, midi::ChannelVoiceEvent, project::Project, timeline::Timeline, SSResult,
+};
 
 fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
     debug!("BeatMaker: Sending events");
@@ -33,23 +35,22 @@ fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
 
 type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
 
-pub struct BeatMaker {
+pub struct BeatMaker<'a> {
+    timeline: &'a Timeline,
     subscribers: Arc<RwLock<SubscriberMap>>,
     beat_subscribers: Arc<RwLock<Vec<mpsc::Sender<u64>>>>,
     next_subscriber_id: u32,
 }
 
-impl Default for BeatMaker {
-    fn default() -> Self {
+impl<'a> BeatMaker<'a> {
+    pub fn new(timeline: &'a Timeline) -> Self {
         BeatMaker {
-            subscribers: Arc::new(RwLock::new(HashMap::new())),
-            beat_subscribers: Arc::new(RwLock::new(Vec::new())),
+            timeline,
+            subscribers: Default::default(),
+            beat_subscribers: Default::default(),
             next_subscriber_id: 0,
         }
     }
-}
-
-impl BeatMaker {
     pub fn subscribe(&mut self) -> BeatMakerSubscription {
         let mut subscriber_map = self.subscribers.write().unwrap();
         let (sender, receiver) = mpsc::channel();
@@ -76,11 +77,17 @@ impl BeatMaker {
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         let beat_subscribers = self.beat_subscribers.clone();
+        let timeline_subscription = self.timeline.subscribe();
         thread::spawn(move || {
             info!("BeatMaker started");
-            let beat_timer = BeatTimer::with_project_settings(project_settings);
+
+            let beat_timer = BeatTimerBuilder::default()
+                .timeline_subscription(timeline_subscription)
+                .project_settings(project_settings)
+                .build()
+                .unwrap();
             beat_timer.run_forever(|current_beats| {
-                debug!("🥁 {}", current_beats);
+                info!("🥁 {}", current_beats);
                 {
                     let subscribers = subscribers.read().unwrap();
                     for track in tracks.read().unwrap().values() {

@@ -6,5 +6,6 @@ pub mod error;
 pub mod id;
 pub mod midi;
 pub mod project;
+pub mod timeline;
 
 pub use error::SSResult;

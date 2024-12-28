@@ -4,6 +4,7 @@ use std::{
 };
 
 use crossterm::event::{self, Event, KeyCode};
+use log::info;
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
@@ -131,25 +132,21 @@ impl<'a> Tui<'a> {
                                     KeyCode::Char('q') => {
                                         break;
                                     }
-                                    KeyCode::Enter => {
+                                    KeyCode::Char(':') => {
                                         self.switch_to_command_palette_mode();
+                                    }
+                                    KeyCode::Char(' ') => {
+                                        self.execute_command("play", &command_handler);
                                     }
                                     _ => {}
                                 },
                                 InputMode::CommandPalette => match key.code {
                                     KeyCode::Enter => {
-                                        let command = self.input.value();
-                                        match command {
+                                        let command = self.input.value().to_string();
+                                        match command.as_str() {
                                             "q" => break,
                                             "" => self.switch_to_normal_mode(),
-                                            _ => match command_handler(self.input.value()) {
-                                                Ok(()) => {
-                                                    self.input.reset();
-                                                }
-                                                Err(e) => {
-                                                    self.set_command_error(e);
-                                                }
-                                            },
+                                            _ => self.execute_command(&command, &command_handler),
                                         }
                                     }
                                     KeyCode::Esc => {
@@ -169,6 +166,20 @@ impl<'a> Tui<'a> {
         }
         ratatui::restore();
         Ok(())
+    }
+
+    fn execute_command<F>(&mut self, command: &str, command_handler: &F)
+    where
+        F: Fn(&str) -> SSResult<()>,
+    {
+        match command_handler(command) {
+            Ok(()) => {
+                self.input.reset();
+            }
+            Err(e) => {
+                self.set_command_error(e);
+            }
+        }
     }
 
     fn append_log(&mut self, log: String) {
