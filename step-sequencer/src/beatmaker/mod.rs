@@ -2,6 +2,7 @@ pub mod beat_timer;
 pub mod pattern;
 
 use std::{
+    cell::RefCell,
     collections::HashMap,
     sync::{
         mpsc::{self},
@@ -14,7 +15,8 @@ use beat_timer::BeatTimerBuilder;
 use log::{debug, info};
 
 use crate::{
-    drum_track::Beat, midi::ChannelVoiceEvent, project::Project, timeline::Timeline, SSResult,
+    drum_track::Beat, midi::ChannelVoiceEvent, project::Project, timeline::TimelineSubscription,
+    SSResult,
 };
 
 fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
@@ -35,33 +37,31 @@ fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
 
 type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
 
-pub struct BeatMaker<'a> {
-    timeline: &'a Timeline,
+pub struct BeatMaker {
     subscribers: Arc<RwLock<SubscriberMap>>,
     beat_subscribers: Arc<RwLock<Vec<mpsc::Sender<u64>>>>,
-    next_subscriber_id: u32,
+    next_subscriber_id: RefCell<u32>,
 }
 
-impl<'a> BeatMaker<'a> {
-    pub fn new(timeline: &'a Timeline) -> Self {
+impl BeatMaker {
+    pub fn new() -> Self {
         BeatMaker {
-            timeline,
             subscribers: Default::default(),
             beat_subscribers: Default::default(),
-            next_subscriber_id: 0,
+            next_subscriber_id: RefCell::new(0),
         }
     }
-    pub fn subscribe(&mut self) -> BeatMakerSubscription {
+    pub fn subscribe(&self) -> BeatMakerSubscription {
         let mut subscriber_map = self.subscribers.write().unwrap();
         let (sender, receiver) = mpsc::channel();
-        subscriber_map.insert(self.next_subscriber_id, sender);
+        subscriber_map.insert(*self.next_subscriber_id.borrow(), sender);
 
         let subscription = BeatMakerSubscription {
-            id: self.next_subscriber_id,
+            id: *self.next_subscriber_id.borrow(),
             receiver,
             subscribers: self.subscribers.clone(),
         };
-        self.next_subscriber_id += 1;
+        *self.next_subscriber_id.borrow_mut() += 1;
         return subscription;
     }
 
@@ -72,15 +72,14 @@ impl<'a> BeatMaker<'a> {
         return receiver;
     }
 
-    pub fn start(&self, project: &Project) {
+    pub fn start(&self, project: &Project, timeline_subscription: TimelineSubscription) {
         let project_settings = project.project_settings();
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         let beat_subscribers = self.beat_subscribers.clone();
-        let timeline_subscription = self.timeline.subscribe();
+        // let timeline_subscription = self.timeline.subscribe();
         thread::spawn(move || {
             info!("BeatMaker started");
-
             let beat_timer = BeatTimerBuilder::default()
                 .timeline_subscription(timeline_subscription)
                 .project_settings(project_settings)

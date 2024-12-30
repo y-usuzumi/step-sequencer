@@ -1,4 +1,5 @@
 use core::fmt;
+use std::rc::Rc;
 
 use crate::{beatmaker::BeatMaker, project::Project, SSResult};
 #[cfg(target_os = "macos")]
@@ -21,25 +22,21 @@ impl fmt::Display for Command {
 }
 
 pub trait SSClient {
-    fn start(&mut self) -> SSResult<()>;
-    fn stop(&mut self) -> SSResult<()>;
-    fn send_command(&self, command: Command) -> SSResult<()>;
+    fn start(&self) -> SSResult<()>;
+    fn stop(&self) -> SSResult<()>;
 }
 
 #[cfg(target_os = "linux")]
-pub fn create_ss_client<'a>(
-    beatmaker: BeatMaker<'a>,
-    project: &'a Project,
-) -> SSResult<Box<dyn 'a + SSClient>> {
+pub fn create_ss_client(
+    beatmaker: Rc<BeatMaker>,
+    project: Rc<Project>,
+) -> SSResult<Box<jack::SSJackClient>> {
     use self::jack::SSJackClient;
     Ok(Box::new(SSJackClient::new(beatmaker, project)))
 }
 
 #[cfg(target_os = "macos")]
-pub fn create_ss_client<'a>(
-    beatmaker: BeatMaker,
-    project: &'a Project,
-) -> SSResult<Box<dyn 'a + SSClient>> {
+pub fn create_ss_client(beatmaker: Rc<BeatMaker>) -> SSResult<Box<coreaudio::SSCoreAudioClient>> {
     use self::coreaudio::SSCoreAudioClient;
-    Ok(Box::new(SSCoreAudioClient::new(beatmaker, project)))
+    Ok(Box::new(SSCoreAudioClient::new(beatmaker)))
 }

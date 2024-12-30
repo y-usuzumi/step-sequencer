@@ -135,54 +135,6 @@ impl<'a> SSClient for SSJackClient<'a> {
         }
         Ok(())
     }
-
-    fn send_command(&self, command: Command) -> SSResult<()> {
-        // TODO: Copy-paste from CoreAudio side. Improve the design
-        match command {
-            Command::ChangeTempo(tempo) => {
-                info!("Changing tempo to: {}", tempo);
-                let project_settings = self.project.project_settings();
-                project_settings.write().unwrap().tempo = tempo;
-            }
-            Command::ToggleBeat(track, beat) => {
-                info!("Toggling beat {} @ track {}", beat, track);
-                let binding = self.project.tracks();
-                let mut trackmap = binding.write().unwrap();
-                let mut tracks = trackmap.values_mut();
-                for _ in 0..track {
-                    tracks.next();
-                }
-                let track = tracks.next().ok_or(SSError::CommandError(
-                    crate::error::CommandError::CommandExecutionError(
-                        command,
-                        format!("Track {} does not exist", track),
-                    ),
-                ))?;
-                track.toggle_beat(beat);
-            }
-            Command::Resize(track, size) => {
-                info!("Resizing track {} to {} beats", track, size);
-                let binding = self.project.tracks();
-                let mut trackmap = binding.write().unwrap();
-                let mut tracks = trackmap.values_mut();
-                for _ in 0..track {
-                    tracks.next();
-                }
-                let track = tracks.next().ok_or(SSError::CommandError(
-                    crate::error::CommandError::CommandExecutionError(
-                        command,
-                        format!("Track {} does not exist", track),
-                    ),
-                ))?;
-                track.resize(size);
-            }
-            _ => {
-                error!("Unsupported command: {}", command);
-            }
-        }
-
-        Ok(())
-    }
 }
 
 struct TestState {

@@ -1,4 +1,5 @@
 use std::{
+    rc::Rc,
     sync::mpsc::{self, Receiver, Sender},
     thread,
 };
@@ -23,16 +24,16 @@ use tui_input::Input;
 
 use crate::widgets::BeatPad;
 
-pub(crate) struct Tui<'a> {
+pub(crate) struct Tui {
     input: Input,
     input_mode: InputMode,
     error: Option<SSError>,
     logs: Vec<String>,
-    project: &'a Project,
+    project: Rc<Project>,
 }
 
-impl<'a> Tui<'a> {
-    pub fn new(project: &'a Project) -> Self {
+impl Tui {
+    pub fn new(project: Rc<Project>) -> Self {
         Self {
             input: Input::default(),
             input_mode: InputMode::Normal,
@@ -82,7 +83,7 @@ enum TuiEvent {
     Redraw,
 }
 
-impl<'a> Tui<'a> {
+impl Tui {
     pub fn run_tui<F>(
         &mut self,
         beat_receiver: Receiver<u64>,

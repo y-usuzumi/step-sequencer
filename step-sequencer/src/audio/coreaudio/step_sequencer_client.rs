@@ -9,24 +9,28 @@ use coreaudio::audio_unit::{AudioUnit, IOType, SampleFormat};
 use coremidi::{Client, PacketBuffer};
 use log::{debug, info};
 use std::f64::consts::PI;
+use std::rc::Rc;
+use std::sync::mpsc::Sender;
 use std::thread;
 
-pub struct SSCoreAudioClient<'a> {
-    beatmaker: BeatMaker,
-    project: &'a Project,
+pub struct SSCoreAudioClient {
+    beatmaker: Rc<BeatMaker>,
+    stop_signal_sender: Option<Sender<()>>,
 }
 
-impl<'a> SSCoreAudioClient<'a> {
-    pub fn new(beatmaker: BeatMaker, project: &'a Project) -> Self {
-        Self { beatmaker, project }
+impl SSCoreAudioClient {
+    pub fn new(beatmaker: Rc<BeatMaker>) -> Self {
+        Self {
+            beatmaker,
+            stop_signal_sender: None,
+        }
     }
 }
 
-impl<'a> SSClient for SSCoreAudioClient<'a> {
-    fn start(&mut self) -> SSResult<()> {
+impl SSClient for SSCoreAudioClient {
+    fn start(&self) -> SSResult<()> {
         info!("Running midi client");
         let beatmaker_subscription = self.beatmaker.subscribe();
-        self.beatmaker.start(&self.project);
         thread::spawn(move || -> SSResult<()> {
             let client = Client::new("Yukio's Step Sequencer MIDI").unwrap();
             let source = client.virtual_source("source").unwrap();
@@ -53,19 +57,10 @@ impl<'a> SSClient for SSCoreAudioClient<'a> {
         Ok(())
     }
 
-    fn stop(&mut self) -> SSResult<()> {
-        // No-op for now
-        Ok(())
-    }
-
-    fn send_command(&self, command: Command) -> SSResult<()> {
-        match command {
-            Command::ChangeTempo(tempo) => {
-                let project_settings = self.project.project_settings();
-                project_settings.write().unwrap().tempo = tempo;
-            }
+    fn stop(&self) -> SSResult<()> {
+        if let Some(ref stop_signal_sender) = self.stop_signal_sender {
+            stop_signal_sender.send(());
         }
-
         Ok(())
     }
 }

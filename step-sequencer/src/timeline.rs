@@ -22,13 +22,15 @@ pub enum TimelineEvent {
     Stop,
 }
 
+type TimelineSubscriberMap = BTreeMap<AutoIncrementId, mpsc::SyncSender<TimelineEvent>>;
+
 pub struct Timeline {
     interval: Duration,
     /// This is only updated upon pause/stop
     current_tick: Arc<RwLock<Tick>>,
     idgen: RefCell<AutoIncrementIdGen>,
     start_mutex: Arc<Mutex<bool>>,
-    subscribers: Arc<RwLock<BTreeMap<AutoIncrementId, mpsc::SyncSender<TimelineEvent>>>>,
+    subscribers: Arc<RwLock<TimelineSubscriberMap>>,
 }
 
 impl Timeline {
@@ -47,6 +49,7 @@ impl Timeline {
             id: next_id,
             interval: self.interval,
             receiver,
+            subscribers: self.subscribers.clone(),
         };
     }
 
@@ -124,4 +127,12 @@ pub struct TimelineSubscription {
     pub id: AutoIncrementId,
     pub interval: Duration,
     pub receiver: mpsc::Receiver<TimelineEvent>,
+    subscribers: Arc<RwLock<TimelineSubscriberMap>>,
+}
+
+impl Drop for TimelineSubscription {
+    fn drop(&mut self) {
+        let mut subscriber_map = self.subscribers.write().unwrap();
+        subscriber_map.remove(&self.id);
+    }
 }

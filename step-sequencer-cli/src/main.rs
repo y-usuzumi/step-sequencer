@@ -1,18 +1,22 @@
 mod tui;
 mod widgets;
-use std::sync::{
-    mpsc::{self, Sender},
-    OnceLock,
+use std::{
+    rc::Rc,
+    sync::{
+        mpsc::{self, Sender},
+        OnceLock,
+    },
 };
 
 use log::info;
 use step_sequencer::{
-    audio::{create_ss_client, Command},
+    audio::{create_ss_client, Command, SSClient},
     beatmaker::{
         pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
         BeatMaker,
     },
     error::{CommandError, SSError},
+    launcher::{SSLauncher, SSLauncherBuilder},
     project::Project,
     timeline::{Timeline, TimelineState},
     SSResult,
@@ -33,9 +37,9 @@ fn main() -> SSResult<()> {
     log::set_logger(logger)
         .map(|()| log::set_max_level(log::LevelFilter::Info))
         .unwrap();
-    let timeline = Timeline::default();
-    let beatmaker = BeatMaker::new(&timeline);
-    let project = Project::new();
+    let timeline = Rc::new(Timeline::default());
+    let beatmaker = Rc::new(BeatMaker::new());
+    let project = Rc::new(Project::new());
     let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
     } else {
@@ -45,9 +49,14 @@ fn main() -> SSResult<()> {
         project.add_track(track);
     }
     let beat_receiver = beatmaker.subscribe_beats();
-    let mut ss_client = create_ss_client(beatmaker, &project)?;
-    ss_client.start()?;
-    let mut tui = Tui::new(&project);
+    let ss_launcher = SSLauncherBuilder::default()
+        .timeline(Rc::clone(&timeline))
+        .beatmaker(Rc::clone(&beatmaker))
+        .project(Rc::clone(&project))
+        .build()
+        .unwrap();
+    ss_launcher.start()?;
+    let mut tui = Tui::new(Rc::clone(&project));
     tui.run_tui(beat_receiver, tui_log_receiver, |s: &str| {
         let command = str_to_command(s);
         match command {
@@ -65,7 +74,7 @@ fn main() -> SSResult<()> {
                     Ok(())
                 }
             },
-            Ok(command) => ss_client.send_command(command),
+            Ok(command) => ss_launcher.send_command(command),
         }
     })
 }
