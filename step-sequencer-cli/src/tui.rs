@@ -139,6 +139,9 @@ impl Tui {
                                     KeyCode::Char(' ') => {
                                         self.execute_command("play", &command_handler);
                                     }
+                                    KeyCode::Esc => {
+                                        self.execute_command("stop", &command_handler);
+                                    }
                                     _ => {}
                                 },
                                 InputMode::CommandPalette => match key.code {

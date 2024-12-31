@@ -1,16 +1,10 @@
 use std::{
-    cell::RefCell,
     rc::Rc,
-    sync::{
-        mpsc::{self, Sender},
-        Arc, Condvar, Mutex,
-    },
+    sync::{Arc, Condvar, Mutex},
     thread,
-    time::Duration,
 };
 
-use crate::{audio::Command, error::SSError, project::Project};
-use jack::{contrib::ClosureProcessHandler, AsyncClient, Frames, RawMidi};
+use jack::{Frames, RawMidi};
 use log::{debug, error, info};
 
 use crate::{
@@ -32,8 +26,10 @@ impl SSJackClient {
             jack_client_condvar: Arc::new((Mutex::new(false), Condvar::new())),
         }
     }
+}
 
-    fn create_ss_jack_client(&self) {
+impl SSClient for SSJackClient {
+    fn start(&self) -> SSResult<()> {
         let beatmaker_subscription = self.beatmaker.subscribe();
         let jack_client_condvar = self.jack_client_condvar.clone();
         thread::spawn(move || -> SSResult<()> {
@@ -124,12 +120,6 @@ impl SSJackClient {
         while !*started {
             started = cvar.wait(started).unwrap();
         }
-    }
-}
-
-impl SSClient for SSJackClient {
-    fn start(&self) -> SSResult<()> {
-        self.create_ss_jack_client();
         info!("SSJackClient started");
         Ok(())
     }

@@ -1,7 +1,6 @@
 use std::{
     sync::{Arc, RwLock},
-    thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use derive_builder::Builder;
@@ -54,7 +53,11 @@ impl BeatTimer {
                         current_beat += 1;
                     }
                 }
-                TimelineEvent::Stop => {}
+                TimelineEvent::Pause => {}
+                TimelineEvent::Stop => {
+                    current_beat = 0;
+                    next_beat_time = 0;
+                }
             }
         }
     }

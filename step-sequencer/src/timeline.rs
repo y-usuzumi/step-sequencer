@@ -1,12 +1,12 @@
 use std::{
     cell::RefCell,
     collections::BTreeMap,
-    sync::{mpsc, Arc, Mutex, RwLock},
+    sync::{mpsc, Arc, Condvar, Mutex, RwLock},
     thread,
     time::{Duration, Instant},
 };
 
-use log::warn;
+use log::{info, warn};
 
 use crate::id::{AutoIncrementId, AutoIncrementIdGen};
 
@@ -19,6 +19,7 @@ pub enum TimelineState {
 
 pub enum TimelineEvent {
     Tick(Tick),
+    Pause,
     Stop,
 }
 
@@ -30,6 +31,7 @@ pub struct Timeline {
     current_tick: Arc<RwLock<Tick>>,
     idgen: RefCell<AutoIncrementIdGen>,
     start_mutex: Arc<Mutex<bool>>,
+    state_condvar: Arc<Condvar>,
     subscribers: Arc<RwLock<TimelineSubscriberMap>>,
 }
 
@@ -64,6 +66,7 @@ impl Timeline {
     pub fn start(&self) {
         *self.start_mutex.lock().unwrap() = true;
         let start_mutex = self.start_mutex.clone();
+        let state_condvar = self.state_condvar.clone();
         let subscribers = self.subscribers.clone();
         let last_current_tick = self.current_tick.clone();
         let interval = self.interval;
@@ -72,11 +75,8 @@ impl Timeline {
             let mut next_tick_time = Instant::now() + interval;
             loop {
                 if !*start_mutex.lock().unwrap() {
-                    for subscriber in subscribers.read().unwrap().values() {
-                        subscriber.send(TimelineEvent::Stop).unwrap();
-                    }
-
                     *last_current_tick.write().unwrap() = new_current_tick;
+                    state_condvar.notify_one();
                     return;
                 }
                 for subscriber in subscribers.read().unwrap().values() {
@@ -101,12 +101,27 @@ impl Timeline {
     }
 
     pub fn pause(&self) {
-        *self.start_mutex.lock().unwrap() = false;
+        let mut guard = self.start_mutex.lock().unwrap();
+        while *guard {
+            *guard = false;
+            guard = self.state_condvar.wait(guard).unwrap();
+        }
+        for subscriber in self.subscribers.read().unwrap().values() {
+            subscriber.send(TimelineEvent::Pause).unwrap();
+        }
+        info!("Timeline paused");
     }
 
-    pub fn stop(&mut self) {
-        let mut mutexguard = self.start_mutex.lock().unwrap();
-        *mutexguard = false;
+    pub fn stop(&self) {
+        let mut guard = self.start_mutex.lock().unwrap();
+        while *guard {
+            *guard = false;
+            guard = self.state_condvar.wait(guard).unwrap();
+        }
+        for subscriber in self.subscribers.read().unwrap().values() {
+            subscriber.send(TimelineEvent::Stop).unwrap();
+        }
+        info!("Timeline stopped");
         *self.current_tick.write().unwrap() = 0;
     }
 }
@@ -118,6 +133,7 @@ impl Default for Timeline {
             current_tick: Default::default(),
             idgen: Default::default(),
             start_mutex: Default::default(),
+            state_condvar: Default::default(),
             subscribers: Default::default(),
         }
     }

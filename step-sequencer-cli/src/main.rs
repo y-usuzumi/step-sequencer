@@ -56,7 +56,7 @@ fn main() -> SSResult<()> {
         .build()
         .unwrap();
     ss_launcher.start()?;
-    let mut tui = Tui::new(Rc::clone(&project));
+    let mut tui = Tui::new(project);
     tui.run_tui(beat_receiver, tui_log_receiver, |s: &str| {
         let command = str_to_command(s);
         match command {
@@ -65,15 +65,20 @@ fn main() -> SSResult<()> {
             Ok(Command::PlayOrPause) => match timeline.state() {
                 TimelineState::Stopped => {
                     info!("Start");
-                    let _ = timeline.start();
+                    timeline.start();
                     Ok(())
                 }
                 TimelineState::Started => {
                     info!("Pause");
-                    let _ = timeline.pause();
+                    timeline.pause();
                     Ok(())
                 }
             },
+            Ok(Command::Stop) => {
+                info!("Stop");
+                timeline.stop();
+                Ok(())
+            }
             Ok(command) => ss_launcher.send_command(command),
         }
     })
@@ -85,6 +90,7 @@ fn str_to_command(s: &str) -> SSResult<Command> {
         let args: Vec<&str> = chunks.collect();
         match command {
             "play" => Ok(Command::PlayOrPause),
+            "stop" => Ok(Command::Stop),
             "t" => {
                 if args.len() >= 1 {
                     let tempo = args[0].parse::<u16>()?;
