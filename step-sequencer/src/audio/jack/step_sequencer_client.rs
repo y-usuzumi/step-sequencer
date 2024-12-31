@@ -1,5 +1,10 @@
 use std::{
-    sync::mpsc::{self, Sender},
+    cell::RefCell,
+    rc::Rc,
+    sync::{
+        mpsc::{self, Sender},
+        Arc, Condvar, Mutex,
+    },
     thread,
     time::Duration,
 };
@@ -15,26 +20,22 @@ use crate::{
     SSResult,
 };
 
-pub struct SSJackClient<'a> {
-    beatmaker: BeatMaker<'a>,
-    project: &'a Project,
-    stop_signal_sender: Option<Sender<()>>,
+pub struct SSJackClient {
+    beatmaker: Rc<BeatMaker>,
+    jack_client_condvar: Arc<(Mutex<bool>, Condvar)>,
 }
 
-impl<'a> SSJackClient<'a> {
-    pub fn new(beatmaker: BeatMaker<'a>, project: &'a Project) -> Self {
+impl SSJackClient {
+    pub fn new(beatmaker: Rc<BeatMaker>) -> Self {
         Self {
             beatmaker,
-            project,
-            stop_signal_sender: None,
+            jack_client_condvar: Arc::new((Mutex::new(false), Condvar::new())),
         }
     }
 
-    fn create_ss_jack_client(&mut self) {
-        let (stop_signal_sender, stop_signal_receiver) = mpsc::channel();
-        self.stop_signal_sender = Some(stop_signal_sender);
+    fn create_ss_jack_client(&self) {
         let beatmaker_subscription = self.beatmaker.subscribe();
-        self.beatmaker.start(&self.project);
+        let jack_client_condvar = self.jack_client_condvar.clone();
         thread::spawn(move || -> SSResult<()> {
             // 1. Create client
             let (client, _status) =
@@ -106,33 +107,42 @@ impl<'a> SSJackClient<'a> {
             // 3. Activate the client, which starts the processing.
             // Must bind it to a variable, otherwise the client is deactivated on drop immediately!
             let active_client = client.activate_async((), process).unwrap();
-            if let Ok(_) = stop_signal_receiver.recv() {
-                Ok(())
-            } else {
-                Err(crate::error::SSError::Unknown(
-                    "stop_signal_sender disconnected while receiving from stop_signal_receiver"
-                        .to_string(),
-                ))
+            let (lock, cvar) = &*jack_client_condvar;
+            {
+                let mut started = lock.lock().unwrap();
+                *started = true;
+                cvar.notify_one();
+                let mut started = cvar.wait(started).unwrap();
+                while !*started {
+                    started = cvar.wait(started).unwrap();
+                }
             }
+            Ok(())
         });
+        let (lock, cvar) = &*self.jack_client_condvar;
+        let mut started = lock.lock().unwrap();
+        while !*started {
+            started = cvar.wait(started).unwrap();
+        }
     }
 }
 
-impl<'a> SSClient for SSJackClient<'a> {
-    fn start(&mut self) -> SSResult<()> {
+impl SSClient for SSJackClient {
+    fn start(&self) -> SSResult<()> {
         self.create_ss_jack_client();
         info!("SSJackClient started");
         Ok(())
     }
 
-    fn stop(&mut self) -> SSResult<()> {
+    fn stop(&self) -> SSResult<()> {
         // 5. Not needed as the async client will cease processing on `drop`.
         // if let Err(err) = active_client.deactivate() {
         //     error!("JACK exited with error: {err}");
         // }
-        if let Some(ref stop_signal_sender) = self.stop_signal_sender {
-            stop_signal_sender.send(());
-        }
+        let (lock, cvar) = &*self.jack_client_condvar;
+        let mut started = lock.lock().unwrap();
+        *started = false;
+        cvar.notify_one();
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
 use core::fmt;
 use std::rc::Rc;
 
-use crate::{beatmaker::BeatMaker, project::Project, SSResult};
+use crate::{beatmaker::BeatMaker, SSResult};
 #[cfg(target_os = "macos")]
 mod coreaudio;
 #[cfg(target_os = "linux")]
@@ -29,10 +29,9 @@ pub trait SSClient {
 #[cfg(target_os = "linux")]
 pub fn create_ss_client(
     beatmaker: Rc<BeatMaker>,
-    project: Rc<Project>,
 ) -> SSResult<Box<jack::SSJackClient>> {
     use self::jack::SSJackClient;
-    Ok(Box::new(SSJackClient::new(beatmaker, project)))
+    Ok(Box::new(SSJackClient::new(beatmaker)))
 }
 
 #[cfg(target_os = "macos")]
