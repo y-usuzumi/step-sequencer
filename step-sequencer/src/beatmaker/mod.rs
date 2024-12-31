@@ -35,11 +35,18 @@ fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
     }
 }
 
+pub enum BeatSignal {
+    Beat(u64),
+    Pause,
+    Stop,
+}
+
 type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
+type SignalSubscriberMap = Vec<mpsc::Sender<BeatSignal>>;
 
 pub struct BeatMaker {
     subscribers: Arc<RwLock<SubscriberMap>>,
-    beat_subscribers: Arc<RwLock<Vec<mpsc::Sender<u64>>>>,
+    signal_subscribers: Arc<RwLock<SignalSubscriberMap>>,
     next_subscriber_id: RefCell<u32>,
 }
 
@@ -47,7 +54,7 @@ impl BeatMaker {
     pub fn new() -> Self {
         BeatMaker {
             subscribers: Default::default(),
-            beat_subscribers: Default::default(),
+            signal_subscribers: Default::default(),
             next_subscriber_id: RefCell::new(0),
         }
     }
@@ -65,10 +72,10 @@ impl BeatMaker {
         return subscription;
     }
 
-    pub fn subscribe_beats(&self) -> mpsc::Receiver<u64> {
-        let mut beat_subscribers = self.beat_subscribers.write().unwrap();
+    pub fn subscribe_signals(&self) -> mpsc::Receiver<BeatSignal> {
+        let mut signal_subscribers = self.signal_subscribers.write().unwrap();
         let (sender, receiver) = mpsc::channel();
-        beat_subscribers.push(sender);
+        signal_subscribers.push(sender);
         return receiver;
     }
 
@@ -76,7 +83,7 @@ impl BeatMaker {
         let project_settings = project.project_settings();
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
-        let beat_subscribers = self.beat_subscribers.clone();
+        let signal_subscribers = self.signal_subscribers.clone();
         // let timeline_subscription = self.timeline.subscribe();
         thread::spawn(move || {
             info!("BeatMaker started");
@@ -85,24 +92,38 @@ impl BeatMaker {
                 .project_settings(project_settings)
                 .build()
                 .unwrap();
-            beat_timer.run_forever(|current_beats| {
-                info!("🥁 {}", current_beats);
-                {
-                    let subscribers = subscribers.read().unwrap();
-                    for track in tracks.read().unwrap().values() {
-                        let beat_idx = current_beats as usize % track.total_beats();
-                        if let Some(beat) = track.get_as_beat(beat_idx) {
-                            send_beat(&subscribers, &beat);
+            beat_timer.run_forever(
+                |current_beats| {
+                    info!("🥁 {}", current_beats);
+                    {
+                        let subscribers = subscribers.read().unwrap();
+                        for track in tracks.read().unwrap().values() {
+                            let beat_idx = current_beats as usize % track.total_beats();
+                            if let Some(beat) = track.get_as_beat(beat_idx) {
+                                send_beat(&subscribers, &beat);
+                            }
                         }
                     }
-                }
-                {
-                    let beat_subscribers = beat_subscribers.read().unwrap();
-                    for beat_subscriber in beat_subscribers.iter() {
-                        beat_subscriber.send(current_beats);
+                    {
+                        let signal_subscribers = signal_subscribers.read().unwrap();
+                        for signal_subscriber in signal_subscribers.iter() {
+                            signal_subscriber.send(BeatSignal::Beat(current_beats));
+                        }
                     }
-                }
-            });
+                },
+                || {
+                    let signal_subscribers = signal_subscribers.read().unwrap();
+                    for signal_subscriber in signal_subscribers.iter() {
+                        signal_subscriber.send(BeatSignal::Pause);
+                    }
+                },
+                || {
+                    let signal_subscribers = signal_subscribers.read().unwrap();
+                    for signal_subscriber in signal_subscribers.iter() {
+                        signal_subscriber.send(BeatSignal::Stop);
+                    }
+                },
+            );
         });
     }
 }

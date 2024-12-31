@@ -14,6 +14,7 @@ use ratatui::{
     Frame,
 };
 use step_sequencer::{
+    beatmaker::BeatSignal,
     drum_track::{DrumTrack, DrumTrackBeat},
     error::SSError,
     project::Project,
@@ -86,7 +87,7 @@ enum TuiEvent {
 impl Tui {
     pub fn run_tui<F>(
         &mut self,
-        beat_receiver: Receiver<u64>,
+        beat_signal_receiver: Receiver<BeatSignal>,
         log_receiver: Receiver<String>,
         command_handler: F,
     ) -> SSResult<()>
@@ -111,8 +112,13 @@ impl Tui {
             });
         }
         thread::spawn(move || loop {
-            if let Ok(current_beats) = beat_receiver.recv() {
-                event_sender.send(TuiEvent::Redraw);
+            if let Ok(signal) = beat_signal_receiver.recv() {
+                match signal {
+                    _ => {
+                        // Be it Beat, Pause or Stop, redraw anyways
+                        event_sender.send(TuiEvent::Redraw);
+                    }
+                }
             }
         });
 

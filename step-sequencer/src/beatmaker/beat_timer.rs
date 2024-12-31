@@ -23,9 +23,11 @@ fn bpm_to_duration(bpm: u16) -> Duration {
 }
 
 impl BeatTimer {
-    pub fn run_forever<T>(&self, on_beat: T)
+    pub fn run_forever<B, P, S>(&self, on_beat: B, on_pause: P, on_stop: S)
     where
-        T: Fn(u64),
+        B: Fn(u64),
+        P: Fn(),
+        S: Fn(),
     {
         // This method might pose a problem when the old tempo is very low, since
         // the tempo change needs to wait until the current `thread::sleep` is done
@@ -53,10 +55,20 @@ impl BeatTimer {
                         current_beat += 1;
                     }
                 }
-                TimelineEvent::Pause => {}
+                TimelineEvent::Pause => {
+                    on_pause();
+                }
                 TimelineEvent::Stop => {
+                    *self
+                        .project_settings
+                        .read()
+                        .unwrap()
+                        .current_beats
+                        .write()
+                        .unwrap() = 0;
                     current_beat = 0;
                     next_beat_time = 0;
+                    on_stop();
                 }
             }
         }

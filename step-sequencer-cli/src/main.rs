@@ -48,7 +48,7 @@ fn main() -> SSResult<()> {
     for track in example_drumtracks.all_tracks() {
         project.add_track(track);
     }
-    let beat_receiver = beatmaker.subscribe_beats();
+    let beat_receiver = beatmaker.subscribe_signals();
     let ss_launcher = SSLauncherBuilder::default()
         .timeline(Rc::clone(&timeline))
         .beatmaker(Rc::clone(&beatmaker))
