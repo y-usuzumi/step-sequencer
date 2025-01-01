@@ -1,5 +1,5 @@
 mod tui;
-mod widgets;
+mod ui;
 use std::{
     rc::Rc,
     sync::{
@@ -10,13 +10,14 @@ use std::{
 
 use log::info;
 use step_sequencer::{
-    audio::{create_ss_client, Command, SSClient},
+    audio::Command,
     beatmaker::{
         pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
         BeatMaker,
     },
     error::{CommandError, SSError},
-    launcher::{SSLauncher, SSLauncherBuilder},
+    launcher::SSLauncherBuilder,
+    midi::{note::Note, Channel, Velocity},
     project::Project,
     timeline::{Timeline, TimelineState},
     SSResult,
@@ -92,6 +93,7 @@ fn str_to_command(s: &str) -> SSResult<Command> {
             "play" => Ok(Command::PlayOrPause),
             "stop" => Ok(Command::Stop),
             "t" => {
+                // "(T)empo"
                 if args.len() >= 1 {
                     let tempo = args[0].parse::<u16>()?;
                     Ok(Command::ChangeTempo(tempo))
@@ -103,6 +105,7 @@ fn str_to_command(s: &str) -> SSResult<Command> {
                 }
             }
             "b" => {
+                // "toggle (B)eat"
                 if args.len() >= 2 {
                     let track = args[0].parse::<usize>()? - 1;
                     let beat = args[1].parse::<usize>()? - 1;
@@ -115,10 +118,50 @@ fn str_to_command(s: &str) -> SSResult<Command> {
                 }
             }
             "r" => {
+                // (R)esize
                 if args.len() >= 2 {
                     let track = args[0].parse::<usize>()? - 1;
                     let size = args[1].parse::<usize>()?;
                     Ok(Command::Resize(track, size))
+                } else {
+                    Err(SSError::CommandError(CommandError::ArgumentError(
+                        command.to_string(),
+                        args.join(" "),
+                    )))
+                }
+            }
+            "tc" => {
+                // set (T)rack (C)hannel
+                if args.len() >= 2 {
+                    let track = args[0].parse::<usize>()? - 1;
+                    let channel = args[1].parse::<Channel>()?;
+                    Ok(Command::SetChannel(track, channel))
+                } else {
+                    Err(SSError::CommandError(CommandError::ArgumentError(
+                        command.to_string(),
+                        args.join(" "),
+                    )))
+                }
+            }
+            "tn" => {
+                // set (T)rack (N)ote
+                if args.len() >= 2 {
+                    let track = args[0].parse::<usize>()? - 1;
+                    let note = args[1].parse::<Note>()?;
+                    Ok(Command::SetNote(track, note))
+                } else {
+                    Err(SSError::CommandError(CommandError::ArgumentError(
+                        command.to_string(),
+                        args.join(" "),
+                    )))
+                }
+            }
+            "tv" => {
+                // set (T)rack (V)elocity
+                if args.len() >= 2 {
+                    let track = args[0].parse::<usize>()? - 1;
+                    let velocity = args[1].parse::<Velocity>()?;
+                    Ok(Command::SetVelocity(track, velocity))
                 } else {
                     Err(SSError::CommandError(CommandError::ArgumentError(
                         command.to_string(),

@@ -7,7 +7,7 @@ use crate::{
     id::{new_id, SSId},
 };
 
-type TrackMap = IndexMap<SSId, DrumTrack>;
+pub type TrackMap = IndexMap<SSId, DrumTrack>;
 
 pub struct Project {
     tracks: Arc<RwLock<TrackMap>>,

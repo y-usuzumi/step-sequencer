@@ -1,7 +1,11 @@
 use core::fmt;
 use std::rc::Rc;
 
-use crate::{beatmaker::BeatMaker, SSResult};
+use crate::{
+    beatmaker::BeatMaker,
+    midi::{note::Note, Channel, Velocity},
+    SSResult,
+};
 #[cfg(target_os = "macos")]
 mod coreaudio;
 #[cfg(target_os = "linux")]
@@ -14,6 +18,9 @@ pub enum Command {
     ChangeTempo(u16),
     ToggleBeat(usize, usize),
     Resize(usize, usize),
+    SetChannel(usize, Channel),
+    SetVelocity(usize, Velocity),
+    SetNote(usize, Note),
 }
 
 impl fmt::Display for Command {

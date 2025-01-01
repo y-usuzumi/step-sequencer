@@ -52,6 +52,27 @@ impl DrumTrack {
         self.default_beat = beat;
     }
 
+    pub fn set_default_channel(&mut self, channel: Channel) {
+        self.default_beat = Beat {
+            channel,
+            ..self.get_default_beat()
+        }
+    }
+
+    pub fn set_default_note(&mut self, note: Note) {
+        self.default_beat = Beat {
+            note,
+            ..self.get_default_beat()
+        }
+    }
+
+    pub fn set_default_velocity(&mut self, velocity: Velocity) {
+        self.default_beat = Beat {
+            velocity,
+            ..self.get_default_beat()
+        }
+    }
+
     pub fn toggle_beat(&mut self, idx: usize) {
         if let Unset = self.get(idx) {
             self.assign_beat(idx, DrumTrackBeat::DefaultBeat);

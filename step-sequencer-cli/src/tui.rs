@@ -7,10 +7,10 @@ use std::{
 use crossterm::event::{self, Event, KeyCode};
 use log::info;
 use ratatui::{
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Style},
+    layout::{Constraint, Flex, Layout, Rect},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Padding, Paragraph, Widget},
     Frame,
 };
 use step_sequencer::{
@@ -23,7 +23,7 @@ use step_sequencer::{
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
-use crate::widgets::BeatPad;
+use crate::{ui::BeatPad, ui::Popup};
 
 pub(crate) struct Tui {
     input: Input,
@@ -45,8 +45,10 @@ impl Tui {
     }
 }
 
+#[derive(PartialEq)]
 enum InputMode {
     Normal,
+    Help,
     CommandPalette,
 }
 
@@ -142,11 +144,20 @@ impl Tui {
                                     KeyCode::Char(':') => {
                                         self.switch_to_command_palette_mode();
                                     }
+                                    KeyCode::Char('?') => {
+                                        self.switch_to_help_mode();
+                                    }
                                     KeyCode::Char(' ') => {
                                         self.execute_command("play", &command_handler);
                                     }
                                     KeyCode::Esc => {
                                         self.execute_command("stop", &command_handler);
+                                    }
+                                    _ => {}
+                                },
+                                InputMode::Help => match key.code {
+                                    KeyCode::Esc => {
+                                        self.switch_to_normal_mode();
                                     }
                                     _ => {}
                                 },
@@ -206,6 +217,10 @@ impl Tui {
         self.input_mode = InputMode::Normal;
     }
 
+    fn switch_to_help_mode(&mut self) {
+        self.input_mode = InputMode::Help;
+    }
+
     fn set_command_error(&mut self, err: SSError) {
         self.error = Some(err);
     }
@@ -247,6 +262,16 @@ impl Tui {
         }
         frame.render_widget(self.log_widget(), logging_area);
         frame.render_widget(self.command_area_widget(), command_area);
+        if self.input_mode == InputMode::Help {
+            self.render_help_popup(frame);
+        }
+    }
+
+    fn render_help_popup(&self, frame: &mut Frame) {
+        let help_msg = r#"
+TODO
+        "#;
+        frame.render_widget(Popup::new(help_msg), frame.area());
     }
 
     fn render_track(
@@ -313,7 +338,6 @@ impl Tui {
 
     fn get_input_mode_style(&self) -> Style {
         match self.input_mode {
-            InputMode::Normal => Style::default(),
             InputMode::CommandPalette => {
                 if self.error.is_some() {
                     Style::default().fg(Color::Red)
@@ -321,6 +345,7 @@ impl Tui {
                     Style::default().fg(Color::Yellow)
                 }
             }
+            _ => Style::default(),
         }
     }
 

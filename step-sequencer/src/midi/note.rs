@@ -1,3 +1,8 @@
+use std::{path::Display, str::FromStr, sync::LazyLock};
+
+use regex::Regex;
+use thiserror::Error;
+
 use self::PitchClass::*;
 
 use super::Key;
@@ -48,6 +53,59 @@ pub struct Note {
     octave: i8,
 }
 
+#[derive(Clone, Debug, Error)]
+pub struct ParseNoteError(String);
+
+impl std::fmt::Display for ParseNoteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Invalid note: {0}", self.0)
+    }
+}
+
+static NOTE_REGEX: LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new("(?<note>[A-Ga-g][#b]?)(?<octave>-?[0-9]+)").unwrap());
+
+fn get_note_regex() -> &'static Regex {
+    return &*NOTE_REGEX;
+}
+
+impl FromStr for Note {
+    type Err = ParseNoteError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        NOTE_REGEX
+            .captures(s)
+            .map(|cap| {
+                let note = cap.name("note").unwrap().as_str();
+                let octave = cap.name("octave").unwrap().as_str().parse::<i8>().ok()?;
+                match note {
+                    "c" | "C" => Some(Note::C(octave)),
+                    "c#" | "C#" => Some(Note::Cs(octave)),
+                    "db" | "Db" => Some(Note::Df(octave)),
+                    "d" | "D" => Some(Note::D(octave)),
+                    "d#" | "D#" => Some(Note::Ds(octave)),
+                    "eb" | "Eb" => Some(Note::Ef(octave)),
+                    "e" | "E" => Some(Note::E(octave)),
+                    "f" | "F" => Some(Note::F(octave)),
+                    "f#" | "F#" => Some(Note::Fs(octave)),
+                    "gb" | "Gb" => Some(Note::Gf(octave)),
+                    "g" | "G" => Some(Note::G(octave)),
+                    "g#" | "G#" => Some(Note::Gs(octave)),
+                    "ab" | "Ab" => Some(Note::Af(octave)),
+                    "a" | "A" => Some(Note::A(octave)),
+                    "a#" | "A#" => Some(Note::As(octave)),
+                    "bb" | "Bb" => Some(Note::Bf(octave)),
+                    "b" | "B" => Some(Note::B(octave)),
+                    _ => None,
+                }
+            })
+            .flatten()
+            .ok_or(ParseNoteError(format!(
+                "Invalid note representation: `{0}`",
+                s
+            )))
+    }
+}
+
 macro_rules! note_func {
     ($x:ident) => {
         pub const fn $x(octave: i8) -> Self {
@@ -83,5 +141,16 @@ impl Note {
 impl Into<Key> for Note {
     fn into(self) -> Key {
         (24 + 12 * self.octave + Into::<i8>::into(self.pitch_class)) as Key
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn parse_note() {
+        assert_eq!("F#3".parse::<Note>().unwrap(), Note::Fs(3));
+        assert_eq!("Gb-2".parse::<Note>().unwrap(), Note::Gf(-2));
+        assert!("B1288".parse::<Note>().is_err());
     }
 }

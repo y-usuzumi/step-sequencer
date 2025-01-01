@@ -1,7 +1,7 @@
 use std::{io, num::ParseIntError};
 use thiserror::Error;
 
-use crate::audio::Command;
+use crate::{audio::Command, midi::note::ParseNoteError};
 
 pub type SSResult<T> = std::result::Result<T, SSError>;
 
@@ -19,6 +19,8 @@ pub enum SSError {
     CommandError(#[from] CommandError),
     #[error("Parse int error: `{0}`")]
     ParseIntError(#[from] ParseIntError),
+    #[error("Parse note error: `{0}`")]
+    ParseNoteError(#[from] ParseNoteError),
     #[error("Unsupported platform: `{0}`")]
     UnsupportedPlatform(String),
     #[error("Unknown: `{0}`")]
