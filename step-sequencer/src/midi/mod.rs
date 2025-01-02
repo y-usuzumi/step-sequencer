@@ -89,6 +89,6 @@ mod tests {
             velocity: 42,
         };
         let data = event.to_data().unwrap();
-        assert_eq!(data, &[0b10000001, 0b00001010, 0b00101010]);
+        assert_eq!(data, &[0b10010001, 0b00001010, 0b00101010]);
     }
 }
