@@ -231,25 +231,44 @@ impl Tui {
 
     fn draw(&mut self, frame: &mut Frame) {
         let vertical = Layout::vertical([
-            Constraint::Fill(1),
-            Constraint::Length(10),
-            Constraint::Length(3),
+            Constraint::Fill(1),    // Operation, including beat view and info view
+            Constraint::Length(10), // Log view
+            Constraint::Length(3),  // Command view
         ]);
-        let [operation_area, logging_area, command_area] = vertical.areas(frame.area());
-        if self.logs.len() > (logging_area.height - 2) as usize {
-            self.logs
-                .drain(0..(self.logs.len() - (logging_area.height - 2) as usize));
+        let [operation_area, log_area, command_area] = vertical.areas(frame.area());
+        let operation_layout = Layout::horizontal(vec![
+            Constraint::Fill(1),    // Beat view
+            Constraint::Length(34), // Info view
+        ]);
+        let [beat_view_area, info_area] = operation_layout.areas(operation_area);
+        self.render_beat_view(frame, beat_view_area);
+        self.render_info_view(frame, info_area);
+        self.render_log_view(frame, log_area);
+        self.render_command_area(frame, command_area);
+        if self.input_mode == InputMode::Help {
+            self.render_help_popup(frame, frame.area());
         }
-        let operation_area_block = Block::new()
+    }
+
+    fn render_help_popup(&self, frame: &mut Frame, area: Rect) {
+        let help_msg = r#"
+TODO
+        "#;
+        let popup = Popup::new(help_msg);
+        frame.render_widget(popup, area);
+    }
+
+    fn render_beat_view(&self, frame: &mut Frame, area: Rect) {
+        let beat_view_block = Block::new()
             .borders(Borders::ALL)
             .title("Tracks")
             .padding(Padding::uniform(1));
-        frame.render_widget(&operation_area_block, operation_area);
-        let operation_area = operation_area_block.inner(operation_area);
+        frame.render_widget(&beat_view_block, area);
+        let beat_view_area = beat_view_block.inner(area);
         let binding = self.project.tracks();
         let tracks = binding.read().unwrap();
-        let operation_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
-        let track_areas = operation_layout.split(operation_area);
+        let beat_view_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
+        let track_areas = beat_view_layout.split(beat_view_area);
         let current_beat = {
             let binding = self.project.project_settings();
             let binding = binding.read().unwrap();
@@ -260,18 +279,6 @@ impl Tui {
         for (track, area) in tracks.values().zip(track_areas.into_iter()) {
             self.render_track(frame, track, current_beat, *area);
         }
-        frame.render_widget(self.log_widget(), logging_area);
-        frame.render_widget(self.command_area_widget(), command_area);
-        if self.input_mode == InputMode::Help {
-            self.render_help_popup(frame);
-        }
-    }
-
-    fn render_help_popup(&self, frame: &mut Frame) {
-        let help_msg = r#"
-TODO
-        "#;
-        frame.render_widget(Popup::new(help_msg), frame.area());
     }
 
     fn render_track(
@@ -322,7 +329,25 @@ TODO
         }
     }
 
-    fn log_widget(&self) -> List {
+    fn render_info_view(&self, frame: &mut Frame, area: Rect) {
+        let project_settings = self.project.project_settings();
+        let project_settings = project_settings.read().unwrap();
+        let info = List::new(vec![
+            format!("Tempo: {}", project_settings.tempo),
+            format!(
+                "Current beat: {}",
+                *project_settings.current_beats.read().unwrap()
+            ),
+        ])
+        .block(Block::bordered().title("Info"));
+        frame.render_widget(info, area);
+    }
+
+    fn render_log_view(&mut self, frame: &mut Frame, area: Rect) {
+        if self.logs.len() > (area.height - 2) as usize {
+            self.logs
+                .drain(0..(self.logs.len() - (area.height - 2) as usize));
+        }
         let messages: Vec<ListItem> = self
             .logs
             .iter()
@@ -333,7 +358,7 @@ TODO
             })
             .collect();
         let messages = List::new(messages).block(Block::bordered().title("Log"));
-        return messages;
+        frame.render_widget(messages, area);
     }
 
     fn get_input_mode_style(&self) -> Style {
@@ -349,7 +374,7 @@ TODO
         }
     }
 
-    fn command_area_widget(&self) -> Paragraph {
+    fn render_command_area(&self, frame: &mut Frame, area: Rect) {
         let title = match self.error {
             Some(ref err) => format!("Command ({})", err),
             None => "Command".to_string(),
@@ -362,6 +387,6 @@ TODO
                     .padding(Padding::symmetric(1, 0))
                     .style(self.get_input_mode_style()),
             );
-        return paragraph;
+        frame.render_widget(paragraph, area);
     }
 }
