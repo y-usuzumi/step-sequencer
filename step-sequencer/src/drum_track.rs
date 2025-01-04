@@ -4,7 +4,7 @@ use crate::{
     midi::{note::Note, Channel, Velocity},
 };
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum DrumTrackBeat {
     Unset,
     DefaultBeat,
@@ -74,7 +74,7 @@ impl DrumTrack {
     }
 
     pub fn toggle_beat(&mut self, idx: usize) {
-        if let Unset = self.get(idx) {
+        if let Unset = self.beats.get(idx).unwrap_or(&Unset) {
             self.assign_beat(idx, DrumTrackBeat::DefaultBeat);
         } else {
             self.remove_beat(idx);
@@ -99,19 +99,31 @@ impl DrumTrack {
         self.beats.resize(size, Unset);
     }
 
-    pub fn total_beats(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.beats.len()
     }
 
-    pub fn get(&self, idx: usize) -> DrumTrackBeat {
-        self.beats.get(idx).unwrap_or(&Unset).clone()
+    pub fn get(&self, idx: usize) -> Option<&DrumTrackBeat> {
+        self.beats.get(idx)
     }
 
-    pub fn get_as_beat(&self, idx: usize) -> Option<Beat> {
-        match self.get(idx) {
+    pub fn get_as_beat(&self, idx: usize) -> Option<Option<Beat>> {
+        self.beats.get(idx).map(|b| self.drum_track_beat_to_beat(b))
+    }
+
+    fn drum_track_beat_to_beat(&self, beat: &DrumTrackBeat) -> Option<Beat> {
+        match beat {
             Unset => None,
             DefaultBeat => Some(self.default_beat),
-            OverrideBeat(beat) => Some(beat),
+            OverrideBeat(beat) => Some(*beat),
         }
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<DrumTrackBeat> {
+        self.beats.iter()
+    }
+
+    pub fn iter_as_beats(&self) -> impl Iterator<Item = Option<Beat>> + use<'_> {
+        self.beats.iter().map(|b| self.drum_track_beat_to_beat(b))
     }
 }

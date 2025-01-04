@@ -28,6 +28,34 @@ pub enum PitchClass {
     B,
 }
 
+impl std::fmt::Display for PitchClass {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                C => "C",
+                Cs => "C#",
+                Df => "Db",
+                D => "D",
+                Ds => "D#",
+                Ef => "Eb",
+                E => "E",
+                F => "F",
+                Fs => "F#",
+                Gf => "Gb",
+                G => "G",
+                Gs => "G#",
+                Af => "Ab",
+                A => "A",
+                As => "A#",
+                Bf => "Bb",
+                B => "B",
+            }
+        )
+    }
+}
+
 impl Into<i8> for PitchClass {
     fn into(self) -> i8 {
         match self {
@@ -51,6 +79,12 @@ impl Into<i8> for PitchClass {
 pub struct Note {
     pitch_class: PitchClass,
     octave: i8,
+}
+
+impl std::fmt::Display for Note {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.pitch_class, self.octave)
+    }
 }
 
 #[derive(Clone, Debug, Error)]

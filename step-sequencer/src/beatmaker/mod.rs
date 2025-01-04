@@ -98,8 +98,8 @@ impl BeatMaker {
                     {
                         let subscribers = subscribers.read().unwrap();
                         for track in tracks.read().unwrap().values() {
-                            let beat_idx = current_beats as usize % track.total_beats();
-                            if let Some(beat) = track.get_as_beat(beat_idx) {
+                            let beat_idx = current_beats as usize % track.len();
+                            if let Some(Some(beat)) = track.get_as_beat(beat_idx) {
                                 send_beat(&subscribers, &beat);
                             }
                         }

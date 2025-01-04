@@ -48,7 +48,7 @@ impl BeatTimer {
                             .project_settings
                             .read()
                             .unwrap()
-                            .current_beats
+                            .current_beat
                             .write()
                             .unwrap() = current_beat;
                         next_beat_time += beat_interval;
@@ -63,7 +63,7 @@ impl BeatTimer {
                         .project_settings
                         .read()
                         .unwrap()
-                        .current_beats
+                        .current_beat
                         .write()
                         .unwrap() = 0;
                     current_beat = 0;

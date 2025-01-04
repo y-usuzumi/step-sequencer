@@ -16,14 +16,14 @@ pub struct Project {
 
 pub struct ProjectSettings {
     pub tempo: u16,
-    pub current_beats: Arc<RwLock<u64>>,
+    pub current_beat: Arc<RwLock<u64>>,
 }
 
 impl Default for ProjectSettings {
     fn default() -> Self {
         Self {
             tempo: 110,
-            current_beats: Arc::new(RwLock::new(0)),
+            current_beat: Arc::new(RwLock::new(0)),
         }
     }
 }

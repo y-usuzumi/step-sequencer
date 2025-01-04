@@ -3,7 +3,7 @@ use std::sync::RwLockReadGuard;
 use log::debug;
 
 use crate::{
-    drum_track::DrumTrack,
+    drum_track::{DrumTrack, DrumTrackBeat},
     midi::{note::Note, ChannelVoiceEvent, Key},
 };
 
@@ -60,48 +60,25 @@ pub struct ExampleDiscoDrumTracks {
 
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     fn kick(&self) -> DrumTrack {
-        DrumTrack::with_beats(
-            "Kick",
-            self.kick,
-            &[
-                DefaultBeat,
-                Unset,
-                Unset,
-                Unset,
-                DefaultBeat,
-                DefaultBeat,
-                Unset,
-                Unset,
-            ],
-        )
+        DrumTrack::with_beats("Kick", self.kick, &[DefaultBeat, Unset].repeat(8))
     }
 
     fn snare(&self) -> DrumTrack {
-        DrumTrack::with_beats("Snare", self.snare, &[Unset, Unset, DefaultBeat, Unset])
+        DrumTrack::with_beats("Snare", self.snare, &[Unset, DefaultBeat].repeat(8))
     }
 
     fn hihat(&self) -> DrumTrack {
-        DrumTrack::with_beats(
-            "Hi-hat closed",
-            self.hihat,
-            &[
-                DefaultBeat,
-                DefaultBeat,
-                DefaultBeat,
-                DefaultBeat,
-                DefaultBeat,
-                DefaultBeat,
-                DefaultBeat,
-                Unset,
-            ],
-        )
+        DrumTrack::with_beats("Hi-hat closed", self.hihat, &[DefaultBeat, Unset].repeat(8))
     }
 
     fn hihat_open(&self) -> DrumTrack {
         DrumTrack::with_beats(
             "Hi-hat open",
             self.hihat_open,
-            &[Unset, Unset, Unset, Unset, Unset, Unset, Unset, DefaultBeat],
+            &(vec![DefaultBeat]
+                .into_iter()
+                .chain(vec![Unset; 15].into_iter())
+                .collect::<Vec<DrumTrackBeat>>()),
         )
     }
 }

@@ -10,7 +10,7 @@ use ratatui::{
     layout::{Constraint, Flex, Layout, Rect},
     style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Padding, Paragraph, Widget},
+    widgets::{Block, Borders, List, ListItem, Padding, Paragraph, TableState, Widget},
     Frame,
 };
 use step_sequencer::{
@@ -23,7 +23,10 @@ use step_sequencer::{
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
-use crate::{ui::BeatPad, ui::Popup};
+use crate::ui::{
+    tracker_view::{TrackerView, TrackerViewState},
+    BeatPad, Popup,
+};
 
 pub(crate) struct Tui {
     input: Input,
@@ -267,18 +270,21 @@ TODO
         let beat_view_area = beat_view_block.inner(area);
         let binding = self.project.tracks();
         let tracks = binding.read().unwrap();
-        let beat_view_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
-        let track_areas = beat_view_layout.split(beat_view_area);
         let current_beat = {
             let binding = self.project.project_settings();
             let binding = binding.read().unwrap();
-            let x = *binding.current_beats.read().unwrap();
+            let x = *binding.current_beat.read().unwrap();
             x
         };
 
-        for (track, area) in tracks.values().zip(track_areas.into_iter()) {
-            self.render_track(frame, track, current_beat, *area);
-        }
+        // let beat_view_layout = Layout::vertical(vec![Constraint::Fill(1); tracks.len()]);
+        // let track_areas = beat_view_layout.split(beat_view_area);
+
+        // for (track, area) in tracks.values().zip(track_areas.into_iter()) {
+        //     self.render_track(frame, track, current_beat, *area);
+        // }
+        let tracker_view = TrackerView::new(&*tracks, current_beat);
+        frame.render_stateful_widget(tracker_view, beat_view_area, &mut Default::default());
     }
 
     fn render_track(
@@ -291,7 +297,7 @@ TODO
         let border = Block::new().borders(Borders::ALL).title(track.name());
         frame.render_widget(&border, operation_area);
         let operation_area = border.inner(operation_area);
-        let total_beats = track.total_beats();
+        let total_beats = track.len();
         let horizontal = Layout::horizontal(vec![Constraint::Fill(1); total_beats]);
         let areas = horizontal.split(operation_area);
         let active_idx = (current_beat as usize) % total_beats;
@@ -300,7 +306,8 @@ TODO
             frame.render_widget(&block, areas[idx]);
             let area = block.inner(areas[idx]);
             let is_active_beat = idx == active_idx;
-            let color = match track.get(idx) {
+            // TODO: Unset and None should have different colors
+            let color = match track.get(idx).unwrap_or(&DrumTrackBeat::Unset) {
                 DrumTrackBeat::Unset => {
                     if is_active_beat {
                         Color::DarkGray
@@ -336,7 +343,7 @@ TODO
             format!("Tempo: {}", project_settings.tempo),
             format!(
                 "Current beat: {}",
-                *project_settings.current_beats.read().unwrap()
+                *project_settings.current_beat.read().unwrap()
             ),
         ])
         .block(Block::bordered().title("Info"));
