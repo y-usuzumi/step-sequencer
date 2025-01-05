@@ -7,10 +7,10 @@ pub type SSResult<T> = std::result::Result<T, SSError>;
 
 #[derive(Error, Debug)]
 pub enum SSError {
-    #[cfg(target_os = "macos")]
+    #[cfg(feature = "coreaudio")]
     #[error("CoreAudio error: `{0}`")]
     CoreAudioError(#[from] coreaudio::Error),
-    #[cfg(target_os = "linux")]
+    #[cfg(feature = "jack")]
     #[error("JACK error: `{0}`")]
     JackError(#[from] jack::Error),
     #[error("IO error: `{0}`")]

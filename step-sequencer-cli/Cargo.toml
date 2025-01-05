@@ -4,10 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-step-sequencer = { path = "../step-sequencer" }
 env_logger = "0.11.6"
 log = "0.4.22"
 thiserror = "2.0.8"
 ratatui = "0.29.0"
 crossterm = "0.28.1"
 tui-input = "0.11.1"
+
+[target.'cfg(target_os="windows")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["jack"] }
+
+[target.'cfg(target_os="linux")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["jack"] }
+
+[target.'cfg(target_os="macos")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["coreaudio"] }

@@ -6,9 +6,9 @@ use crate::{
     midi::{note::Note, Channel, Velocity},
     SSResult,
 };
-#[cfg(target_os = "macos")]
+#[cfg(feature = "coreaudio")]
 mod coreaudio;
-#[cfg(target_os = "linux")]
+#[cfg(feature = "jack")]
 mod jack;
 
 #[derive(Clone, Debug)]
@@ -34,13 +34,13 @@ pub trait SSClient {
     fn stop(&self) -> SSResult<()>;
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(feature = "jack")]
 pub fn create_ss_client(beatmaker: Rc<BeatMaker>) -> SSResult<Box<jack::SSJackClient>> {
     use self::jack::SSJackClient;
     Ok(Box::new(SSJackClient::new(beatmaker)))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(feature = "coreaudio")]
 pub fn create_ss_client(beatmaker: Rc<BeatMaker>) -> SSResult<Box<coreaudio::SSCoreAudioClient>> {
     use self::coreaudio::SSCoreAudioClient;
     Ok(Box::new(SSCoreAudioClient::new(beatmaker)))
