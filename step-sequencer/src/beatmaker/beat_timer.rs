@@ -23,12 +23,7 @@ fn bpm_to_duration(bpm: u16) -> Duration {
 }
 
 impl BeatTimer {
-    pub fn run_forever<B, P, S>(&self, on_beat: B, on_pause: P, on_stop: S)
-    where
-        B: Fn(u64),
-        P: Fn(),
-        S: Fn(),
-    {
+    pub fn run_forever(&self, on_beat: impl Fn(u64), on_pause: impl Fn(), on_stop: impl Fn()) {
         // This method might pose a problem when the old tempo is very low, since
         // the tempo change needs to wait until the current `thread::sleep` is done
         // ... maybe a per-millisecond tick is better?

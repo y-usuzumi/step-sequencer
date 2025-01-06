@@ -90,15 +90,12 @@ enum TuiEvent {
 }
 
 impl Tui {
-    pub fn run_tui<F>(
+    pub fn run_tui(
         &mut self,
         beat_signal_receiver: Receiver<BeatSignal>,
         log_receiver: Receiver<String>,
-        command_handler: F,
-    ) -> SSResult<()>
-    where
-        F: Fn(&str) -> SSResult<()>,
-    {
+        command_handler: impl Fn(&str) -> SSResult<()>,
+    ) -> SSResult<()> {
         let mut terminal = ratatui::init();
         let (event_sender, event_receiver) = mpsc::channel();
         {
