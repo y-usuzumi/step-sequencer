@@ -116,5 +116,5 @@ pub static EXAMPLE_DRUMTRACKS_GARAGEBAND: ExampleDiscoDrumTracks = ExampleDiscoD
     snare: beat!(9, Note::Cs(1), 72),
     hihat: beat!(9, Note::Fs(1), 72),
     hihat_open: beat!(9, Note::As(1), 72),
-    cymbal: beat!(9, Note::G(1), 72), // FIXME
+    cymbal: beat!(9, Note::Cs(2), 72), // FIXME
 };
