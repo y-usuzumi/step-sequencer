@@ -14,6 +14,7 @@ mod jack;
 pub enum Command {
     PlayOrPause,
     Stop,
+    Quit,
     ChangeTempo(u16),
     ToggleBeat(usize, usize),
     Resize(usize, usize),

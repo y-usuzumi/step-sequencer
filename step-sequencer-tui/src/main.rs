@@ -69,6 +69,10 @@ fn main() -> SSResult<()> {
                 timeline.stop();
                 Ok(())
             }
+            Ok(Command::Quit) => {
+                info!("Quit");
+                ss_launcher.stop()
+            }
             Ok(command) => ss_launcher.send_command(command),
         }
     })
@@ -81,6 +85,7 @@ fn str_to_command(s: &str) -> SSResult<Command> {
         match command {
             "play" => Ok(Command::PlayOrPause),
             "stop" => Ok(Command::Stop),
+            "quit" => Ok(Command::Quit),
             "t" => {
                 // "(T)empo"
                 if args.len() >= 1 {
