@@ -46,8 +46,15 @@ pub trait ExampleDrumTracks {
     fn snare(&self) -> DrumTrack;
     fn hihat(&self) -> DrumTrack;
     fn hihat_open(&self) -> DrumTrack;
+    fn cymbal(&self) -> DrumTrack;
     fn all_tracks(&self) -> Vec<DrumTrack> {
-        vec![self.kick(), self.snare(), self.hihat(), self.hihat_open()]
+        vec![
+            self.kick(),
+            self.snare(),
+            self.hihat(),
+            self.hihat_open(),
+            self.cymbal(),
+        ]
     }
 }
 
@@ -56,6 +63,7 @@ pub struct ExampleDiscoDrumTracks {
     snare: Beat,
     hihat: Beat,
     hihat_open: Beat,
+    cymbal: Beat,
 }
 
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
@@ -64,7 +72,11 @@ impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     }
 
     fn snare(&self) -> DrumTrack {
-        DrumTrack::with_beats("Snare", self.snare, &[Unset, DefaultBeat].repeat(8))
+        DrumTrack::with_beats(
+            "Snare",
+            self.snare,
+            &[Unset, Unset, DefaultBeat, Unset].repeat(4),
+        )
     }
 
     fn hihat(&self) -> DrumTrack {
@@ -75,10 +87,18 @@ impl ExampleDrumTracks for ExampleDiscoDrumTracks {
         DrumTrack::with_beats(
             "Hi-hat open",
             self.hihat_open,
-            &(vec![DefaultBeat]
+            &[Unset, DefaultBeat].repeat(8),
+        )
+    }
+
+    fn cymbal(&self) -> DrumTrack {
+        DrumTrack::with_beats(
+            "Cymbal",
+            self.cymbal,
+            &[DefaultBeat]
                 .into_iter()
-                .chain(vec![Unset; 15].into_iter())
-                .collect::<Vec<DrumTrackBeat>>()),
+                .chain([Unset].repeat(31))
+                .collect::<Vec<DrumTrackBeat>>(),
         )
     }
 }
@@ -88,6 +108,7 @@ pub static EXAMPLE_DRUMTRACKS_BITWIG: ExampleDiscoDrumTracks = ExampleDiscoDrumT
     snare: beat!(9, Note::Cs(1), 72),
     hihat: beat!(9, Note::D(1), 72),
     hihat_open: beat!(9, Note::Ds(1), 72),
+    cymbal: beat!(9, Note::G(1), 72),
 };
 
 pub static EXAMPLE_DRUMTRACKS_GARAGEBAND: ExampleDiscoDrumTracks = ExampleDiscoDrumTracks {
@@ -95,4 +116,5 @@ pub static EXAMPLE_DRUMTRACKS_GARAGEBAND: ExampleDiscoDrumTracks = ExampleDiscoD
     snare: beat!(9, Note::Cs(1), 72),
     hihat: beat!(9, Note::Fs(1), 72),
     hihat_open: beat!(9, Note::As(1), 72),
+    cymbal: beat!(9, Note::G(1), 72), // FIXME
 };
