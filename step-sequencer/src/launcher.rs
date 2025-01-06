@@ -42,7 +42,6 @@ impl SSLauncher {
         client.start()?;
         self.beatmaker
             .start(&self.project, self.timeline.subscribe());
-        self.timeline.start();
         Ok(())
     }
 
