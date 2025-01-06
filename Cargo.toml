@@ -2,5 +2,5 @@
 resolver = "2"
 members = [
     "step-sequencer",
-    "step-sequencer-cli"
+    "step-sequencer-tui"
 ]

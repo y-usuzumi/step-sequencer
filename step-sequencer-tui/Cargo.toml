@@ -1,5 +1,5 @@
 [package]
-name = "step-sequencer-cli"
+name = "step-sequencer-tui"
 version = "0.1.0"
 edition = "2021"
 
