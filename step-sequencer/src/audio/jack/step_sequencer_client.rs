@@ -15,23 +15,23 @@ use crate::{
 };
 
 pub struct SSJackClient {
-    beatmaker: Rc<BeatMaker>,
+    beatmaker_subscription: Arc<BeatMakerSubscription>,
     jack_client_condvar: Arc<(Mutex<bool>, Condvar)>,
 }
 
 impl SSJackClient {
-    pub fn new(beatmaker: Rc<BeatMaker>) -> Self {
+    pub fn new(beatmaker_subscription: BeatMakerSubscription) -> Self {
         Self {
-            beatmaker,
+            beatmaker_subscription: Arc::new(beatmaker_subscription),
             jack_client_condvar: Arc::new((Mutex::new(false), Condvar::new())),
         }
     }
 }
 
 impl SSClient for SSJackClient {
-    fn start(&self) -> SSResult<()> {
-        let beatmaker_subscription = self.beatmaker.subscribe();
+    fn start(&mut self) -> SSResult<()> {
         let jack_client_condvar = self.jack_client_condvar.clone();
+        let beatmaker_subscription = self.beatmaker_subscription.clone();
         thread::spawn(move || -> SSResult<()> {
             // 1. Create client
             let (client, _status) =
@@ -124,7 +124,7 @@ impl SSClient for SSJackClient {
         Ok(())
     }
 
-    fn stop(&self) -> SSResult<()> {
+    fn stop(&mut self) -> SSResult<()> {
         // 5. Not needed as the async client will cease processing on `drop`.
         // if let Err(err) = active_client.deactivate() {
         //     error!("JACK exited with error: {err}");
@@ -211,8 +211,8 @@ fn process_beatmaker(
 ) -> SSResult<()> {
     // TODO: Can NOT use while loop to process all messages in the channel.
     // Find out why.
-    if let Ok(event) = &subscription.try_recv() {
-        debug!("BeatMaker: subscription ID: {:?}", subscription.id());
+    if let Ok(event) = &subscription.receiver.try_recv() {
+        debug!("BeatMaker: subscription ID: {:?}", subscription.id);
         debug!("BeatMaker: Received event from: {:?}", event);
         let data = event.to_data()?;
         debug!("BeatMaker: MIDI data: {:?}", data);

@@ -1,16 +1,13 @@
-use std::{
-    rc::Rc,
-    sync::mpsc::{self, Receiver, Sender},
-    thread,
-};
+use std::{rc::Rc, thread};
 
+use crossbeam::channel::{unbounded, Receiver, Sender};
 use crossterm::event::{self, Event, KeyCode};
 use log::info;
 use ratatui::{
-    layout::{Constraint, Flex, Layout, Rect},
-    style::{Color, Style, Stylize},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Padding, Paragraph, TableState, Widget},
+    widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
     Frame,
 };
 use step_sequencer::{
@@ -23,10 +20,7 @@ use step_sequencer::{
 use tui_input::backend::crossterm::EventHandler;
 use tui_input::Input;
 
-use crate::ui::{
-    tracker_view::{TrackerView, TrackerViewState},
-    BeatPad, Popup,
-};
+use crate::ui::{tracker_view::TrackerView, BeatPad, Popup};
 
 pub(crate) struct Tui {
     input: Input,
@@ -97,7 +91,7 @@ impl Tui {
         command_handler: impl Fn(&str) -> SSResult<()>,
     ) -> SSResult<()> {
         let mut terminal = ratatui::init();
-        let (event_sender, event_receiver) = mpsc::channel();
+        let (event_sender, event_receiver) = unbounded();
         {
             let event_sender = event_sender.clone();
             thread::spawn(move || {

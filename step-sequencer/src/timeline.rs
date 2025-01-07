@@ -1,11 +1,12 @@
 use std::{
     cell::RefCell,
     collections::BTreeMap,
-    sync::{mpsc, Arc, Condvar, Mutex, RwLock},
+    sync::{Arc, Condvar, Mutex, RwLock},
     thread,
     time::{Duration, Instant},
 };
 
+use crossbeam::channel::{bounded, Receiver, Sender};
 use log::{info, warn};
 
 use crate::id::{AutoIncrementId, AutoIncrementIdGen};
@@ -23,7 +24,7 @@ pub enum TimelineEvent {
     Stop,
 }
 
-type TimelineSubscriberMap = BTreeMap<AutoIncrementId, mpsc::SyncSender<TimelineEvent>>;
+type TimelineSubscriberMap = BTreeMap<AutoIncrementId, Sender<TimelineEvent>>;
 
 pub struct Timeline {
     interval: Duration,
@@ -45,7 +46,7 @@ impl Timeline {
 
     pub fn subscribe(&self) -> TimelineSubscription {
         let next_id = self.idgen.borrow_mut().next();
-        let (sender, receiver) = mpsc::sync_channel(5);
+        let (sender, receiver) = bounded(5);
         self.subscribers.write().unwrap().insert(next_id, sender);
         return TimelineSubscription {
             id: next_id,
@@ -142,7 +143,7 @@ impl Default for Timeline {
 pub struct TimelineSubscription {
     pub id: AutoIncrementId,
     pub interval: Duration,
-    pub receiver: mpsc::Receiver<TimelineEvent>,
+    pub receiver: Receiver<TimelineEvent>,
     subscribers: Arc<RwLock<TimelineSubscriberMap>>,
 }
 

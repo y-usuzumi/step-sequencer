@@ -1,28 +1,24 @@
-use std::{
-    rc::Rc,
-    sync::{Arc, RwLock, RwLockWriteGuard},
-};
+use std::{rc::Rc, sync::RwLockWriteGuard};
 
+use crossbeam::channel::Receiver;
 use derive_builder::Builder;
-use indexmap::IndexMap;
 use log::{error, info};
 
 use crate::{
     audio::{create_ss_client, Command, SSClient},
-    beatmaker::BeatMaker,
+    beatmaker::{BeatMaker, BeatSignal},
     drum_track::DrumTrack,
     error::SSError,
     project::{Project, TrackMap},
-    timeline::{Timeline, TimelineState},
+    timeline::Timeline,
     SSResult,
 };
 
-#[derive(Builder)]
-#[builder(pattern = "owned")]
 pub struct SSLauncher {
-    timeline: Rc<Timeline>,
-    beatmaker: Rc<BeatMaker>,
+    timeline: Timeline,
+    beatmaker: BeatMaker,
     project: Rc<Project>,
+    ss_client: Box<dyn SSClient>,
 }
 
 fn get_track<'a>(
@@ -37,12 +33,42 @@ fn get_track<'a>(
 }
 
 impl SSLauncher {
-    pub fn start(&self) -> SSResult<()> {
-        let client = create_ss_client(self.beatmaker.clone())?;
-        client.start()?;
+    pub fn new() -> Self {
+        let timeline = Timeline::default();
+        let beatmaker = BeatMaker::new();
+        let project = Rc::new(Project::new());
+        let ss_client = create_ss_client(beatmaker.subscribe());
+        Self {
+            timeline,
+            beatmaker,
+            project,
+            ss_client,
+        }
+    }
+
+    pub fn start(&mut self) -> SSResult<()> {
+        self.ss_client.start()?;
         self.beatmaker
             .start(&self.project, self.timeline.subscribe());
         Ok(())
+    }
+
+    pub fn stop(&mut self) -> SSResult<()> {
+        self.timeline.stop();
+        // self.beatmaker.stop();
+        self.ss_client.stop()
+    }
+
+    pub fn project(&self) -> Rc<Project> {
+        self.project.clone()
+    }
+
+    pub fn timeline(&self) -> &Timeline {
+        &self.timeline
+    }
+
+    pub fn subscribe_beatmaker_signals(&self) -> Receiver<BeatSignal> {
+        self.beatmaker.subscribe_signals()
     }
 
     pub fn send_command(&self, command: Command) -> SSResult<()> {

@@ -21,6 +21,8 @@ pub enum SSError {
     ParseIntError(#[from] ParseIntError),
     #[error("Parse note error: `{0}`")]
     ParseNoteError(#[from] ParseNoteError),
+    #[error("Channel recv error: `{0}`")]
+    RecvError(#[from] crossbeam::channel::RecvError),
     #[error("Unsupported platform: `{0}`")]
     UnsupportedPlatform(String),
     #[error("Unknown: `{0}`")]

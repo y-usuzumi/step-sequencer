@@ -1,5 +1,5 @@
-use crate::audio::Command;
-use crate::beatmaker::BeatMaker;
+use crate::beatmaker::{BeatMaker, BeatMakerSubscription};
+use crate::error::SSError;
 use crate::midi::ChannelVoiceEvent;
 use crate::project::Project;
 use crate::{audio::SSClient, SSResult};
@@ -7,61 +7,86 @@ use crate::{audio::SSClient, SSResult};
 use coreaudio::audio_unit::render_callback::{self, data};
 use coreaudio::audio_unit::{AudioUnit, IOType, SampleFormat};
 use coremidi::{Client, PacketBuffer};
+use crossbeam::channel::{bounded, Sender};
+use crossbeam::select;
 use log::{debug, info};
 use std::f64::consts::PI;
-use std::rc::Rc;
-use std::sync::mpsc::Sender;
-use std::thread;
+use std::marker::PhantomData;
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
 
 pub struct SSCoreAudioClient {
-    beatmaker: Rc<BeatMaker>,
+    beatmaker_subscription: Arc<BeatMakerSubscription>,
     stop_signal_sender: Option<Sender<()>>,
+    processor_thread: Option<JoinHandle<SSResult<()>>>,
+    __unimpl_sync: PhantomData<*const ()>, // Do not allow shard references in multiple threads
 }
 
 impl SSCoreAudioClient {
-    pub fn new(beatmaker: Rc<BeatMaker>) -> Self {
+    pub fn new(beatmaker_subscription: BeatMakerSubscription) -> Self {
         Self {
-            beatmaker,
+            beatmaker_subscription: Arc::new(beatmaker_subscription),
             stop_signal_sender: None,
+            processor_thread: None,
+            __unimpl_sync: PhantomData,
         }
     }
 }
 
 impl SSClient for SSCoreAudioClient {
-    fn start(&self) -> SSResult<()> {
-        info!("Running midi client");
-        let beatmaker_subscription = self.beatmaker.subscribe();
-        thread::spawn(move || -> SSResult<()> {
+    fn start(&mut self) -> SSResult<()> {
+        if self.processor_thread.is_some() {
+            return Err(SSError::Unknown("SSClient is started already".to_string()));
+        }
+        let beatmaker_subscription = self.beatmaker_subscription.clone();
+        let (stop_signal_sender, stop_signal_receiver) = bounded(1);
+        self.stop_signal_sender = Some(stop_signal_sender);
+        let join_handle = thread::spawn(move || -> SSResult<()> {
+            info!("Running midi client");
             let client = Client::new("Yukio's Step Sequencer MIDI").unwrap();
             let source = client.virtual_source("source").unwrap();
-            // coreaudio_example_sinewave()?;
-            for event in beatmaker_subscription.iter() {
-                debug!(
-                    "BeatMaker: subscription ID: {:?}",
-                    beatmaker_subscription.id()
-                );
-                debug!("BeatMaker: Received event from: {:?}", event);
-                let data = event.to_data()?;
-                debug!("BeatMaker: MIDI data: {:?}", data);
-                let time = match event {
-                    ChannelVoiceEvent::NoteOff { .. } => 1,
-                    _ => 0,
-                };
-                let packet_buffer = PacketBuffer::new(time, &data);
-                source.received(&packet_buffer).unwrap();
+            loop {
+                select! {
+                    recv(beatmaker_subscription.receiver) -> event => {
+                        let event = event?;
+                        debug!(
+                            "BeatMaker: subscription ID: {:?}",
+                            beatmaker_subscription.id
+                        );
+                        debug!("BeatMaker: Received event from: {:?}", event);
+                        let data = event.to_data()?;
+                        debug!("BeatMaker: MIDI data: {:?}", data);
+                        let time = match event {
+                            ChannelVoiceEvent::NoteOff { .. } => 1,
+                            _ => 0,
+                        };
+                        let packet_buffer = PacketBuffer::new(time, &data);
+                        source.received(&packet_buffer).unwrap();
+                    }
+                    recv(stop_signal_receiver) -> stop_signal => {
+                        let _ = stop_signal?;
+                        break;
+                    }
+                }
             }
+
             Ok(())
         });
+        self.processor_thread = Some(join_handle);
         // thread::sleep(Duration::from_secs(100));
         info!("SSCoreAudioClient started");
         Ok(())
     }
 
-    fn stop(&self) -> SSResult<()> {
-        if let Some(ref stop_signal_sender) = self.stop_signal_sender {
-            stop_signal_sender.send(());
+    fn stop(&mut self) -> SSResult<()> {
+        match self.processor_thread {
+            Some(_) => {
+                self.stop_signal_sender.take().unwrap().send(());
+                self.processor_thread.take().unwrap().join().unwrap();
+                Ok(())
+            }
+            None => Ok(()),
         }
-        Ok(())
     }
 }
 

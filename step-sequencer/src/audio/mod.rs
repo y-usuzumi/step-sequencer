@@ -1,8 +1,7 @@
 use core::fmt;
-use std::rc::Rc;
 
+use crate::beatmaker::BeatMakerSubscription;
 use crate::{
-    beatmaker::BeatMaker,
     midi::{note::Note, Channel, Velocity},
     SSResult,
 };
@@ -30,18 +29,18 @@ impl fmt::Display for Command {
 }
 
 pub trait SSClient {
-    fn start(&self) -> SSResult<()>;
-    fn stop(&self) -> SSResult<()>;
+    fn start(&mut self) -> SSResult<()>;
+    fn stop(&mut self) -> SSResult<()>;
 }
 
 #[cfg(feature = "jack")]
-pub fn create_ss_client(beatmaker: Rc<BeatMaker>) -> SSResult<Box<jack::SSJackClient>> {
+pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient> {
     use self::jack::SSJackClient;
-    Ok(Box::new(SSJackClient::new(beatmaker)))
+    Box::new(SSJackClient::new(beatmaker_subscription))
 }
 
 #[cfg(feature = "coreaudio")]
-pub fn create_ss_client(beatmaker: Rc<BeatMaker>) -> SSResult<Box<coreaudio::SSCoreAudioClient>> {
+pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient> {
     use self::coreaudio::SSCoreAudioClient;
-    Ok(Box::new(SSCoreAudioClient::new(beatmaker)))
+    Box::new(SSCoreAudioClient::new(beatmaker_subscription))
 }
