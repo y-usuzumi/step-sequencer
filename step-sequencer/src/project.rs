@@ -8,6 +8,7 @@ use crate::{
 };
 
 pub type TrackMap = IndexMap<SSId, DrumTrack>;
+pub type BeatTime = (u64, u32); // (beats, micros)
 
 pub struct Project {
     tracks: Arc<RwLock<TrackMap>>,
@@ -16,14 +17,14 @@ pub struct Project {
 
 pub struct ProjectSettings {
     pub tempo: u16,
-    pub current_beat: Arc<RwLock<u64>>,
+    pub current_beat: Arc<RwLock<BeatTime>>,
 }
 
 impl Default for ProjectSettings {
     fn default() -> Self {
         Self {
             tempo: 110,
-            current_beat: Arc::new(RwLock::new(0)),
+            current_beat: Arc::new(RwLock::new((0, 0))),
         }
     }
 }

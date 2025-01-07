@@ -4,7 +4,10 @@ use ratatui::{
     style::Stylize,
     widgets::{Cell, Row, StatefulWidget, Table, TableState},
 };
-use step_sequencer::{drum_track::Beat, project::TrackMap};
+use step_sequencer::{
+    drum_track::Beat,
+    project::{BeatTime, TrackMap},
+};
 
 use super::styles::get_tracker_view_styles;
 
@@ -24,11 +27,11 @@ impl Default for TrackerViewState {
 
 pub struct TrackerView<'a> {
     tracks: &'a TrackMap,
-    current_beat: u64,
+    current_beat: BeatTime,
 }
 
 impl<'a> TrackerView<'a> {
-    pub fn new(tracks: &'a TrackMap, current_beat: u64) -> Self {
+    pub fn new(tracks: &'a TrackMap, current_beat: BeatTime) -> Self {
         Self {
             tracks,
             current_beat,
@@ -57,7 +60,8 @@ impl<'a> StatefulWidget for TrackerView<'a> {
         let mut rows = vec![];
         let track_count = self.tracks.len();
         for (track_idx, track) in self.tracks.values().enumerate() {
-            let active_beat_idx = (self.current_beat as usize) % track.len();
+            let (current_beat, current_beat_micros) = self.current_beat;
+            let active_beat_idx = (current_beat as usize) % track.len();
             for (beat_idx, beat) in track.iter_as_beats().enumerate() {
                 if rows.len() < track.len() {
                     rows.resize(track.len() + 1, vec![Cell::new(""); track_count]);

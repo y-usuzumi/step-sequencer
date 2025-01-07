@@ -336,12 +336,10 @@ TODO
     fn render_info_view(&self, frame: &mut Frame, area: Rect) {
         let project_settings = self.project.project_settings();
         let project_settings = project_settings.read().unwrap();
+        let (current_beat, current_beat_millis) = *project_settings.current_beat.read().unwrap();
         let info = List::new(vec![
             format!("Tempo: {}", project_settings.tempo),
-            format!(
-                "Current beat: {}",
-                *project_settings.current_beat.read().unwrap()
-            ),
+            format!("Current beat: {}.{}", current_beat, current_beat_millis),
         ])
         .block(Block::bordered().title("Info"));
         frame.render_widget(info, area);

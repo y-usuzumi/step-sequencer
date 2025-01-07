@@ -28,27 +28,31 @@ impl BeatTimer {
         // the tempo change needs to wait until the current `thread::sleep` is done
         // ... maybe a per-millisecond tick is better?
 
-        let mut next_beat_time = 0;
         let interval = self.timeline_subscription.interval;
-        let mut current_beat = 0;
+        let (mut current_beat, mut current_beat_micros) = (0u64, 0u32);
         for tick in self.timeline_subscription.receiver.iter() {
             match tick {
                 TimelineEvent::Tick(tick) => {
-                    while next_beat_time <= interval.as_millis() * (tick as u128) {
-                        on_beat(current_beat);
-                        let beat_interval =
-                            bpm_to_duration(self.project_settings.read().unwrap().tempo)
-                                .as_millis();
-                        *self
-                            .project_settings
-                            .read()
-                            .unwrap()
-                            .current_beat
-                            .write()
-                            .unwrap() = current_beat;
-                        next_beat_time += beat_interval;
-                        current_beat += 1;
+                    if tick == 0 {
+                        on_beat(0);
+                        continue;
                     }
+                    let beat_interval =
+                        bpm_to_duration(self.project_settings.read().unwrap().tempo).as_millis();
+                    current_beat_micros +=
+                        (interval.as_millis() as u32) * 1_000_000 / (beat_interval as u32);
+                    while current_beat_micros >= 1_000_000 {
+                        (current_beat, current_beat_micros) =
+                            (current_beat + 1, current_beat_micros - 1_000_000);
+                        on_beat(current_beat);
+                    }
+                    *self
+                        .project_settings
+                        .read()
+                        .unwrap()
+                        .current_beat
+                        .write()
+                        .unwrap() = (current_beat, current_beat_micros);
                 }
                 TimelineEvent::Pause => {
                     on_pause();
@@ -60,9 +64,8 @@ impl BeatTimer {
                         .unwrap()
                         .current_beat
                         .write()
-                        .unwrap() = 0;
+                        .unwrap() = (0, 0);
                     current_beat = 0;
-                    next_beat_time = 0;
                     on_stop();
                 }
             }
