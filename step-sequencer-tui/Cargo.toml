@@ -10,6 +10,7 @@ thiserror = "2.0.8"
 ratatui = "0.29.0"
 crossterm = "0.28.1"
 tui-input = "0.11.1"
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 
 [target.'cfg(target_os="windows")'.dependencies]
 step-sequencer = { path = "../step-sequencer", features = ["jack"] }

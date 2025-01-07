@@ -1,13 +1,8 @@
 mod tui;
 mod ui;
-use std::{
-    rc::Rc,
-    sync::{
-        mpsc::{self, Sender},
-        OnceLock,
-    },
-};
+use std::{rc::Rc, sync::OnceLock};
 
+use crossbeam::channel::{unbounded, Sender};
 use log::info;
 use step_sequencer::{
     audio::Command,
@@ -16,7 +11,7 @@ use step_sequencer::{
         BeatMaker,
     },
     error::{CommandError, SSError},
-    launcher::SSLauncherBuilder,
+    launcher::SSLauncher,
     midi::{note::Note, Channel, Velocity},
     project::Project,
     timeline::{Timeline, TimelineState},
@@ -33,14 +28,14 @@ fn main() -> SSResult<()> {
     // Need to use a more versatile logger to be able to write to logger in tui.
     // Now disabling env_logger temporarily and write only to my tui custom logger.
     // env_logger::init();
-    let (tui_log_sender, tui_log_receiver) = mpsc::channel();
+    let (tui_log_sender, tui_log_receiver) = unbounded();
     let logger = create_tui_logger(tui_log_sender);
     log::set_logger(logger)
         .map(|()| log::set_max_level(log::LevelFilter::Info))
         .unwrap();
-    let timeline = Rc::new(Timeline::default());
-    let beatmaker = Rc::new(BeatMaker::new());
-    let project = Rc::new(Project::new());
+    let mut ss_launcher = SSLauncher::new();
+    let project = ss_launcher.project();
+    let beat_receiver = ss_launcher.subscribe_beatmaker_signals();
     let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
     } else {
@@ -49,17 +44,11 @@ fn main() -> SSResult<()> {
     for track in example_drumtracks.all_tracks() {
         project.add_track(track);
     }
-    let beat_receiver = beatmaker.subscribe_signals();
-    let ss_launcher = SSLauncherBuilder::default()
-        .timeline(Rc::clone(&timeline))
-        .beatmaker(Rc::clone(&beatmaker))
-        .project(Rc::clone(&project))
-        .build()
-        .unwrap();
     ss_launcher.start()?;
     let mut tui = Tui::new(project);
     tui.run_tui(beat_receiver, tui_log_receiver, |s: &str| {
         let command = str_to_command(s);
+        let timeline = ss_launcher.timeline();
         match command {
             Err(SSError::CommandError(CommandError::EmptyCommand)) => Ok(()),
             Err(e) => Err(e),

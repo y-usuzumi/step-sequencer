@@ -4,19 +4,16 @@ pub mod pattern;
 use std::{
     cell::RefCell,
     collections::HashMap,
-    sync::{
-        mpsc::{self},
-        Arc, RwLock, RwLockReadGuard,
-    },
+    sync::{Arc, RwLock, RwLockReadGuard},
     thread,
 };
 
 use beat_timer::BeatTimerBuilder;
+use crossbeam::channel::{unbounded, Receiver, Sender};
 use log::{debug, info};
 
 use crate::{
     drum_track::Beat, midi::ChannelVoiceEvent, project::Project, timeline::TimelineSubscription,
-    SSResult,
 };
 
 fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
@@ -41,8 +38,8 @@ pub enum BeatSignal {
     Stop,
 }
 
-type SubscriberMap = HashMap<u32, mpsc::Sender<ChannelVoiceEvent>>;
-type SignalSubscriberMap = Vec<mpsc::Sender<BeatSignal>>;
+type SubscriberMap = HashMap<u32, Sender<ChannelVoiceEvent>>;
+type SignalSubscriberMap = Vec<Sender<BeatSignal>>;
 
 pub struct BeatMaker {
     subscribers: Arc<RwLock<SubscriberMap>>,
@@ -60,7 +57,7 @@ impl BeatMaker {
     }
     pub fn subscribe(&self) -> BeatMakerSubscription {
         let mut subscriber_map = self.subscribers.write().unwrap();
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         subscriber_map.insert(*self.next_subscriber_id.borrow(), sender);
 
         let subscription = BeatMakerSubscription {
@@ -72,9 +69,9 @@ impl BeatMaker {
         return subscription;
     }
 
-    pub fn subscribe_signals(&self) -> mpsc::Receiver<BeatSignal> {
+    pub fn subscribe_signals(&self) -> Receiver<BeatSignal> {
         let mut signal_subscribers = self.signal_subscribers.write().unwrap();
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         signal_subscribers.push(sender);
         return receiver;
     }
@@ -131,33 +128,9 @@ impl BeatMaker {
 pub struct BeatMakerAsyncHandle;
 
 pub struct BeatMakerSubscription {
-    id: u32,
-    receiver: mpsc::Receiver<ChannelVoiceEvent>,
-    subscribers: Arc<RwLock<SubscriberMap>>,
-}
-
-impl BeatMakerSubscription {
-    pub fn id(&self) -> u32 {
-        self.id
-    }
-
-    pub fn recv(&self) -> SSResult<ChannelVoiceEvent> {
-        match self.receiver.recv() {
-            Ok(event) => Ok(event),
-            Err(e) => Err(crate::error::SSError::Unknown(e.to_string())),
-        }
-    }
-
-    pub fn try_recv(&self) -> SSResult<ChannelVoiceEvent> {
-        match self.receiver.try_recv() {
-            Ok(event) => Ok(event),
-            Err(e) => Err(crate::error::SSError::Unknown(e.to_string())),
-        }
-    }
-
-    pub fn iter(&self) -> mpsc::Iter<ChannelVoiceEvent> {
-        self.receiver.iter()
-    }
+    pub id: u32,
+    pub receiver: Receiver<ChannelVoiceEvent>,
+    pub subscribers: Arc<RwLock<SubscriberMap>>,
 }
 
 impl Drop for BeatMakerSubscription {
