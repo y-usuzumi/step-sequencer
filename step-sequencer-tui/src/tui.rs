@@ -81,6 +81,7 @@ enum TuiEvent {
     LogEvent(String),
     TerminalEvent(Event),
     Redraw,
+    Quit,
 }
 
 impl Tui {
@@ -88,7 +89,7 @@ impl Tui {
         &mut self,
         beat_signal_receiver: Receiver<BeatSignal>,
         log_receiver: Receiver<String>,
-        command_handler: impl Fn(&str) -> SSResult<()>,
+        mut command_handler: impl FnMut(&str) -> SSResult<()>,
     ) -> SSResult<()> {
         let mut terminal = ratatui::init();
         let (event_sender, event_receiver) = unbounded();
@@ -133,6 +134,7 @@ impl Tui {
                             match self.input_mode {
                                 InputMode::Normal => match key.code {
                                     KeyCode::Char('q') => {
+                                        self.execute_command("quit", &mut command_handler);
                                         break;
                                     }
                                     KeyCode::Char(':') => {
@@ -142,10 +144,10 @@ impl Tui {
                                         self.switch_to_help_mode();
                                     }
                                     KeyCode::Char(' ') => {
-                                        self.execute_command("play", &command_handler);
+                                        self.execute_command("play", &mut command_handler);
                                     }
                                     KeyCode::Esc => {
-                                        self.execute_command("stop", &command_handler);
+                                        self.execute_command("stop", &mut command_handler);
                                     }
                                     _ => {}
                                 },
@@ -159,9 +161,17 @@ impl Tui {
                                     KeyCode::Enter => {
                                         let command = self.input.value().to_string();
                                         match command.as_str() {
-                                            "q" => break,
+                                            "q" => {
+                                                self.execute_command("quit", &mut command_handler);
+                                                break;
+                                            }
                                             "" => self.switch_to_normal_mode(),
-                                            _ => self.execute_command(&command, &command_handler),
+                                            _ => {
+                                                self.execute_command(
+                                                    &command,
+                                                    &mut command_handler,
+                                                );
+                                            }
                                         }
                                     }
                                     KeyCode::Esc => {
@@ -176,6 +186,7 @@ impl Tui {
                         }
                     }
                     TuiEvent::Redraw => {}
+                    TuiEvent::Quit => {}
                 }
             }
         }
@@ -183,9 +194,9 @@ impl Tui {
         Ok(())
     }
 
-    fn execute_command<F>(&mut self, command: &str, command_handler: &F)
+    fn execute_command<F>(&mut self, command: &str, command_handler: &mut F)
     where
-        F: Fn(&str) -> SSResult<()>,
+        F: FnMut(&str) -> SSResult<()>,
     {
         match command_handler(command) {
             Ok(()) => {
