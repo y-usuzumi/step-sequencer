@@ -10,9 +10,9 @@ use crate::{
 use crate::drum_track::Beat;
 use crate::drum_track::DrumTrackBeat::*;
 
-use super::SubscriberMap;
+use super::BeatMakerSubscriberMap;
 
-fn send_key<K>(subscribers: &RwLockReadGuard<SubscriberMap>, key: &K)
+fn send_key<K>(subscribers: &RwLockReadGuard<BeatMakerSubscriberMap>, key: &K)
 where
     K: Clone + Into<Key>,
 {

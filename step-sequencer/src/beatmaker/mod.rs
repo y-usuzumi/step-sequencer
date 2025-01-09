@@ -13,10 +13,14 @@ use crossbeam::channel::{unbounded, Receiver, Sender};
 use log::{debug, info};
 
 use crate::{
-    drum_track::Beat, midi::ChannelVoiceEvent, project::Project, timeline::TimelineSubscription,
+    drum_track::Beat,
+    id::{AutoIncrementId, AutoIncrementIdGen},
+    midi::ChannelVoiceEvent,
+    project::Project,
+    timeline::TimelineSubscription,
 };
 
-fn send_beat(subscribers: &RwLockReadGuard<SubscriberMap>, beat: &Beat) {
+fn send_beat(subscribers: &RwLockReadGuard<BeatMakerSubscriberMap>, beat: &Beat) {
     debug!("BeatMaker: Sending events");
     for sender in subscribers.values() {
         let _ = sender.send(ChannelVoiceEvent::NoteOn {
@@ -38,35 +42,30 @@ pub enum BeatSignal {
     Stop,
 }
 
-type SubscriberMap = HashMap<u32, Sender<ChannelVoiceEvent>>;
+type BeatMakerSubscriberMap = HashMap<AutoIncrementId, Sender<ChannelVoiceEvent>>;
 type SignalSubscriberMap = Vec<Sender<BeatSignal>>;
 
 pub struct BeatMaker {
-    subscribers: Arc<RwLock<SubscriberMap>>,
+    subscribers: Arc<RwLock<BeatMakerSubscriberMap>>,
     signal_subscribers: Arc<RwLock<SignalSubscriberMap>>,
-    next_subscriber_id: RefCell<u32>,
+    idgen: RefCell<AutoIncrementIdGen>,
 }
 
 impl BeatMaker {
     pub fn new() -> Self {
-        BeatMaker {
-            subscribers: Default::default(),
-            signal_subscribers: Default::default(),
-            next_subscriber_id: RefCell::new(0),
-        }
+        Default::default()
     }
     pub fn subscribe(&self) -> BeatMakerSubscription {
-        let mut subscriber_map = self.subscribers.write().unwrap();
+        let next_id = self.idgen.borrow_mut().next();
         let (sender, receiver) = unbounded();
-        subscriber_map.insert(*self.next_subscriber_id.borrow(), sender);
+        let mut subscriber_map = self.subscribers.write().unwrap();
+        subscriber_map.insert(next_id, sender);
 
-        let subscription = BeatMakerSubscription {
-            id: *self.next_subscriber_id.borrow(),
+        BeatMakerSubscription {
+            id: next_id,
             receiver,
             subscribers: self.subscribers.clone(),
-        };
-        *self.next_subscriber_id.borrow_mut() += 1;
-        return subscription;
+        }
     }
 
     pub fn subscribe_signals(&self) -> Receiver<BeatSignal> {
@@ -81,7 +80,6 @@ impl BeatMaker {
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         let signal_subscribers = self.signal_subscribers.clone();
-        // let timeline_subscription = self.timeline.subscribe();
         thread::spawn(move || {
             info!("BeatMaker started");
             let beat_timer = BeatTimerBuilder::default()
@@ -125,12 +123,22 @@ impl BeatMaker {
     }
 }
 
+impl Default for BeatMaker {
+    fn default() -> Self {
+        Self {
+            subscribers: Default::default(),
+            signal_subscribers: Default::default(),
+            idgen: Default::default(),
+        }
+    }
+}
+
 pub struct BeatMakerAsyncHandle;
 
 pub struct BeatMakerSubscription {
-    pub id: u32,
+    pub id: AutoIncrementId,
     pub receiver: Receiver<ChannelVoiceEvent>,
-    pub subscribers: Arc<RwLock<SubscriberMap>>,
+    pub subscribers: Arc<RwLock<BeatMakerSubscriberMap>>,
 }
 
 impl Drop for BeatMakerSubscription {

@@ -19,7 +19,7 @@ pub struct SSCoreAudioClient {
     beatmaker_subscription: Arc<BeatMakerSubscription>,
     stop_signal_sender: Option<Sender<()>>,
     processor_thread: Option<JoinHandle<SSResult<()>>>,
-    __unimpl_sync: PhantomData<*const ()>, // Do not allow shard references in multiple threads
+    __unimpl_sync: PhantomData<*const ()>, // Do not allow shared references in multiple threads
 }
 
 impl SSCoreAudioClient {
