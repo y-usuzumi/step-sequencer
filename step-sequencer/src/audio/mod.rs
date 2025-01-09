@@ -1,6 +1,7 @@
 use core::fmt;
 
 use crate::beatmaker::BeatMakerSubscription;
+use crate::project::Tempo;
 use crate::{
     midi::{note::Note, Channel, Velocity},
     SSResult,
@@ -15,7 +16,7 @@ pub enum Command {
     PlayOrPause,
     Stop,
     Quit,
-    ChangeTempo(u16),
+    ChangeTempo(Tempo),
     ToggleBeat(usize, usize),
     Resize(usize, usize),
     SetChannel(usize, Channel),

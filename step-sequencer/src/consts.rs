@@ -5,3 +5,4 @@ pub const TRACK_DEFAULT_BEAT: Beat = Beat {
     note: Note::C(1),
     velocity: 72,
 };
+pub const BEAT_TIME_MICRO: u32 = 1_000_000;
