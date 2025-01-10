@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, RwLock},
-};
+use std::collections::BTreeMap;
 
 use crate::{
     drum_track::Beat,
@@ -16,6 +13,14 @@ pub struct BeatSorter {
     stored_next_beat: Option<usize>,
 }
 
+/// A helper class that loads beats from given tracks, starting from a given global beat (inclusive)
+/// up to the next global beat (exclusive), sort them by BeatTime in a tree, so that on every tick
+/// we can pop the next earliest beat(s) to play as needed. For more information, see the doc
+/// on `push()` and `pop()`.
+///
+/// In step-sequencer, we load all beats from the 0th global beat onwards before we start playing,
+/// and at the next tick, we immediately load all beats from the 1st global beat till the 2nd.
+/// This might need to change because we add too much workload to the first two ticks.
 impl BeatSorter {
     pub fn new() -> Self {
         Default::default()
@@ -34,7 +39,7 @@ impl BeatSorter {
     }
 
     pub fn next_beat_time(&self) -> Option<BeatTime> {
-        self.treemap.first_key_value().map(|(k, _)| *k)
+        self.treemap.first_key_value().map(|k| *k.0)
     }
 
     pub fn reset(&mut self) {
@@ -51,13 +56,13 @@ impl BeatSorter {
     /// T3: J-----------------------------K-----------------------------L x2/3
     ///
     /// T1 has a tempo scale of x1, which means it follows global tempo
-    /// T2 has a tempo scale of x2.5, which means it is 2.5 times the speed of global tempo
-    /// T3 has a tempo scale of x0.66, which means it is one third the speed of global tempo
+    /// T2 has a tempo scale of x5/2, which means it is 2.5x the speed of global tempo
+    /// T3 has a tempo scale of x2/3, which means it is two thirds the speed of global tempo
     ///
     /// If we call push(0, &tracks), we are storing all beats from A(incl) to B(excl),
-    /// namely A, D, E, F, J.
+    /// namely A, D, J, E, F
     /// Similarly, if we call push(1, &tracks), we are storing all beats from B(incl) to C(excl),
-    /// namely B, G, H, K.
+    /// namely B, G, K, H
     pub fn push(&mut self, beat_seq_num: usize, tracks: &TrackMap) {
         for (_, track) in tracks.iter() {
             let tempo_scale = track.get_tempo_scale();
@@ -87,9 +92,8 @@ impl BeatSorter {
                 }
             } else {
                 // Slower
-                let next_nearest_scaled_beat = (F::from(beat_seq_num + 1) * tempo_scale).floor();
-                println!("NEXT: {}", next_nearest_scaled_beat);
-                if (F::from(beat_seq_num) * tempo_scale).ceil() == next_nearest_scaled_beat {
+                let next_nearest_scaled_beat = (F::from(beat_seq_num) * tempo_scale).ceil();
+                if (next_nearest_scaled_beat / tempo_scale).floor() == F::from(beat_seq_num) {
                     let beat_time = next_nearest_scaled_beat / tempo_scale;
                     let beat_time: BeatTime = (
                         usize::try_from(beat_time.trunc()).unwrap(),
@@ -115,14 +119,14 @@ impl BeatSorter {
     /// T3: J-----------------------------K-----------------------------L x2/3
     ///
     /// T1 has a tempo scale of x1, which means it follows global tempo
-    /// T2 has a tempo scale of x2.5, which means it is 2.5 times the speed of global tempo
-    /// T3 has a tempo scale of x0.66, which means it is one third the speed of global tempo
+    /// T2 has a tempo scale of x5/2, which means it is 2.5x the speed of global tempo
+    /// T3 has a tempo scale of x2/3, which means it is two thirds the speed of global tempo
     ///
     /// If we have called push(0, &tracks), we should have A, D, E, F, J in store.
     /// As we pop, we will get:
-    ///   [A, D, J] (earliest and they share the same beat time),
-    ///   [E]
-    ///   [F]
+    ///   ((0, 0), [A, D, J]) (earliest and they share the same beat time),
+    ///   ((0, 2/5), [E])
+    ///   ((0, 4/5), [F])
     pub fn pop(&mut self) -> Option<(BeatTime, Vec<Option<Beat>>)> {
         self.treemap.pop_first()
     }
