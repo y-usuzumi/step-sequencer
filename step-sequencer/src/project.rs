@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use fraction::Fraction;
 use indexmap::IndexMap;
 
 use crate::{
@@ -7,8 +8,12 @@ use crate::{
     id::{new_id, SSId},
 };
 
+pub type F = Fraction;
+
 pub type TrackMap = IndexMap<SSId, DrumTrack>;
-pub type BeatTime = (u64, u32); // (beats, micros)
+pub type BeatTime = (usize, F); // (beats, micros)
+pub type Tempo = u16;
+pub type TempoScale = F;
 
 pub struct Project {
     tracks: Arc<RwLock<TrackMap>>,
@@ -16,7 +21,7 @@ pub struct Project {
 }
 
 pub struct ProjectSettings {
-    pub tempo: u16,
+    pub tempo: Tempo,
     pub current_beat: Arc<RwLock<BeatTime>>,
 }
 
@@ -24,7 +29,7 @@ impl Default for ProjectSettings {
     fn default() -> Self {
         Self {
             tempo: 110,
-            current_beat: Arc::new(RwLock::new((0, 0))),
+            current_beat: Arc::new(RwLock::new((0, F::from(0)))),
         }
     }
 }

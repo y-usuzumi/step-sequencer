@@ -2,7 +2,10 @@ use self::DrumTrackBeat::*;
 use crate::{
     consts,
     midi::{note::Note, Channel, Velocity},
+    project::TempoScale,
 };
+
+use crate::project::F;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum DrumTrackBeat {
@@ -13,6 +16,7 @@ pub enum DrumTrackBeat {
 
 pub struct DrumTrack {
     name: String,
+    tempo_scale: TempoScale,
     default_beat: Beat,
     beats: Vec<DrumTrackBeat>,
 }
@@ -37,11 +41,16 @@ impl DrumTrack {
             name: name.to_string(),
             default_beat,
             beats: beats.to_vec(),
+            ..Default::default()
         }
     }
 
     pub fn name(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn get_tempo_scale(&self) -> TempoScale {
+        self.tempo_scale
     }
 
     pub fn get_default_beat(&self) -> Beat {
@@ -125,5 +134,31 @@ impl DrumTrack {
 
     pub fn iter_as_beats(&self) -> impl Iterator<Item = Option<Beat>> + use<'_> {
         self.beats.iter().map(|b| self.drum_track_beat_to_beat(b))
+    }
+
+    #[cfg(test)]
+    pub fn with_beats_for_test(tempo_scale: F, note: Note, count: usize) -> Self {
+        use crate::consts::TRACK_DEFAULT_BEAT;
+
+        Self {
+            name: "who cares".to_string(),
+            default_beat: Beat {
+                note,
+                ..TRACK_DEFAULT_BEAT
+            },
+            tempo_scale,
+            beats: vec![DrumTrackBeat::DefaultBeat; count],
+        }
+    }
+}
+
+impl Default for DrumTrack {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            tempo_scale: F::from(1),
+            default_beat: consts::TRACK_DEFAULT_BEAT,
+            beats: Vec::new(),
+        }
     }
 }

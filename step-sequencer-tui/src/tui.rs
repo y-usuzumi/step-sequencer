@@ -344,7 +344,7 @@ TODO
         let (current_beat, current_beat_millis) = *project_settings.current_beat.read().unwrap();
         let info = List::new(vec![
             format!("Tempo: {}", project_settings.tempo),
-            format!("Current beat: {}.{}", current_beat, current_beat_millis),
+            format!("Current beat: {}+{}", current_beat, current_beat_millis),
         ])
         .block(Block::bordered().title("Info"));
         frame.render_widget(info, area);
