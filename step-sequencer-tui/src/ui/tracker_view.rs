@@ -4,10 +4,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Cell, Row, StatefulWidget, Table, TableState},
 };
-use step_sequencer::{
-    drum_track::Beat,
-    project::{BeatTime, TrackMap},
-};
+use step_sequencer::{beatmaker::beat_time::BeatTime, drum_track::Beat, project::TrackMap};
 
 use super::styles::get_tracker_view_styles;
 
@@ -27,14 +24,14 @@ impl Default for TrackerViewState {
 
 pub struct TrackerView<'a> {
     tracks: &'a TrackMap,
-    current_beat: BeatTime,
+    current_beat_time: BeatTime,
 }
 
 impl<'a> TrackerView<'a> {
     pub fn new(tracks: &'a TrackMap, current_beat: BeatTime) -> Self {
         Self {
             tracks,
-            current_beat,
+            current_beat_time: current_beat,
         }
     }
 }
@@ -56,12 +53,16 @@ impl<'a> StatefulWidget for TrackerView<'a> {
         state: &mut Self::State,
     ) {
         let styles = get_tracker_view_styles();
-        let headers = self.tracks.values().map(|t| t.name());
+        let headers = self
+            .tracks
+            .values()
+            .map(|t| format!("{} (x{})", t.name(), t.get_tempo_scale()));
         let mut rows = vec![];
         let track_count = self.tracks.len();
         for (track_idx, track) in self.tracks.values().enumerate() {
-            let (current_beat, current_beat_micros) = self.current_beat;
-            let active_beat_idx = (current_beat as usize) % track.len();
+            let tempo_scale = track.get_tempo_scale();
+            let track_beat_time = self.current_beat_time.stretch(tempo_scale);
+            let active_beat_idx = track_beat_time.integral() % track.len();
             for (beat_idx, beat) in track.iter_as_beats().enumerate() {
                 if rows.len() < track.len() {
                     rows.resize(track.len() + 1, vec![Cell::new(""); track_count]);

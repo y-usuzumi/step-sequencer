@@ -26,6 +26,9 @@ pub enum TimelineEvent {
 
 type TimelineSubscriberMap = BTreeMap<AutoIncrementId, Sender<TimelineEvent>>;
 
+/// Timeline is the heart of step-sequencer. It sends out ticks at precise interval.
+/// BeatMaker's beat time is driven by the ticks, which ensures beat notes are sent
+/// out at the proper time and in the correct order.
 pub struct Timeline {
     interval: Duration,
     /// This is only updated upon pause/stop

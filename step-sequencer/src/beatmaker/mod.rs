@@ -1,5 +1,5 @@
 pub mod beat_sorter;
-pub mod beat_timer;
+pub mod beat_time;
 pub mod pattern;
 
 use std::{
@@ -10,15 +10,18 @@ use std::{
 };
 
 use beat_sorter::BeatSorter;
-use beat_timer::BeatTimerBuilder;
-use crossbeam::channel::{unbounded, Receiver, Sender};
+use beat_time::BeatTime;
+use crossbeam::{
+    channel::{bounded, unbounded, Receiver, Sender},
+    select,
+};
 use log::{debug, info};
 
 use crate::{
     drum_track::Beat,
     id::{AutoIncrementId, AutoIncrementIdGen},
     midi::ChannelVoiceEvent,
-    project::{BeatTime, Project, F},
+    project::{Project, TrackMap, F},
     timeline::{TimelineEvent, TimelineSubscription},
 };
 
@@ -44,13 +47,22 @@ pub enum BeatSignal {
     Stop,
 }
 
+enum InternalSignal {
+    ResetSorter,
+}
+
 type BeatMakerSubscriberMap = HashMap<AutoIncrementId, Sender<ChannelVoiceEvent>>;
 type SignalSubscriberMap = Vec<Sender<BeatSignal>>;
 
+/// BeatMaker sends walks along the timeline and send out beats of every track
+/// as MIDI notes.
+/// Internally, it maintains a search tree of the next upcoming notes of each track.
+/// This ensures all notes are sent out in the correct order.
 pub struct BeatMaker {
     subscribers: Arc<RwLock<BeatMakerSubscriberMap>>,
     signal_subscribers: Arc<RwLock<SignalSubscriberMap>>,
     idgen: RefCell<AutoIncrementIdGen>,
+    internal_signal: (Sender<InternalSignal>, Receiver<InternalSignal>),
 }
 
 impl BeatMaker {
@@ -77,91 +89,124 @@ impl BeatMaker {
         return receiver;
     }
 
+    fn populate_beat_sorter_for_beat_time(
+        beat_sorter: &mut BeatSorter,
+        current_beat_time: BeatTime,
+        tracks: &TrackMap,
+    ) {
+        for (track_id, track) in tracks.iter() {
+            let tempo_scale = track.get_tempo_scale();
+            let track_beat_time = current_beat_time.stretch(tempo_scale).ceil();
+            beat_sorter.push(
+                *track_id,
+                track_beat_time.compress(tempo_scale),
+                track.get_as_beat(track_beat_time.integral()).flatten(),
+            );
+        }
+    }
+
     pub fn start(&self, project: &Project, timeline_subscription: TimelineSubscription) {
         let project_settings = project.project_settings();
         let tracks = project.tracks();
         let subscribers = self.subscribers.clone();
         let signal_subscribers = self.signal_subscribers.clone();
+        let internal_signal_receiver = self.internal_signal.1.clone();
         thread::spawn(move || {
             info!("BeatMaker started");
             let interval = timeline_subscription.interval;
             let mut beat_sorter = BeatSorter::new();
-            let mut current_beat_time = (0usize, F::from(0));
+            let mut current_beat_time = BeatTime::zero();
+            loop {
+                select! {
+                    recv(internal_signal_receiver) -> signal => {
+                        match signal {
+                            Ok(InternalSignal::ResetSorter) => {
+                                beat_sorter.reset();
+                                Self::populate_beat_sorter_for_beat_time(&mut beat_sorter, current_beat_time, &tracks.read().unwrap());
+                            }
+                            Err(err) => {
+                                info!("Internal signal sender: {}. Exiting BeatMaker thread.", err);
+                                break;
+                            }
+                        }
 
-            for tick in timeline_subscription.receiver.iter() {
-                match tick {
-                    TimelineEvent::Tick(_) => {
-                        match beat_sorter.stored_next_beat() {
-                            None => {
-                                // First start or has been reset. Push all beats from global beat 0 to right before global beat 1
-                                beat_sorter.push(0, &*tracks.read().unwrap());
-                                beat_sorter.set_stored_next_beat(0);
-                            }
-                            Some(t) => {
-                                // While we are processing the current beat i, get prepared for i+1 up till before i+2
-                                if current_beat_time.0 >= t {
-                                    beat_sorter
-                                        .push(current_beat_time.0 + 1, &*tracks.read().unwrap());
-                                    beat_sorter.set_stored_next_beat(current_beat_time.0 + 1);
+                    }
+                    recv(timeline_subscription.receiver) -> tick => {
+                        match tick.unwrap() {
+                            TimelineEvent::Tick(tick) => {
+                                if tick == 0 {
+                                    // Start playing
+                                    Self::populate_beat_sorter_for_beat_time(
+                                        &mut beat_sorter,
+                                        current_beat_time,
+                                        &tracks.read().unwrap(),
+                                    );
                                 }
+                                let project_settings = project_settings.read().unwrap();
+                                *project_settings.current_beat_time.write().unwrap() = current_beat_time;
+                                let tempo = project_settings.tempo;
+                                drop(project_settings);
+                                let subscribers = subscribers.read().unwrap();
+                                while beat_sorter.top().is_some() {
+                                    if *beat_sorter.top().unwrap().0 > current_beat_time {
+                                        break;
+                                    }
+                                    let (beat_time, beats) = beat_sorter.pop().unwrap();
+                                    let tracks = tracks.read().unwrap();
+                                    for (track_id, beat) in beats {
+                                        if let Some(beat) = beat {
+                                            send_beat(&subscribers, &beat);
+                                        }
+                                        if let Some(track) = tracks.get(&track_id) {
+                                            let tempo_scale = track.get_tempo_scale();
+                                            let track_beat_time =
+                                                current_beat_time.stretch(tempo_scale);
+                                            let next_track_beat_time = track_beat_time.add_integral(1).floor();
+                                            let next_beat = track
+                                                .get_as_beat(next_track_beat_time.integral() % track.len())
+                                                .flatten();
+                                            beat_sorter.push(track_id,
+                                                next_track_beat_time.compress(tempo_scale), next_beat);
+                                        }
+                                    }
+                                    let signal_subscribers = signal_subscribers.read().unwrap();
+                                    for signal_subscriber in signal_subscribers.iter() {
+                                        signal_subscriber.send(BeatSignal::Beat(beat_time));
+                                    }
+                                }
+                                let beat_time_incr =
+                                    F::new(tempo as u64 * interval.as_millis() as u64, 60_000u64);
+                                current_beat_time = current_beat_time.add_fraction(beat_time_incr);
                             }
-                        }
-                        let current_bpm = project_settings.read().unwrap().tempo;
-                        current_beat_time.1 += F::from(interval.as_millis()) * current_bpm / 60_000;
-                        if current_beat_time.1 > F::from(1) {
-                            current_beat_time.0 +=
-                                usize::try_from(current_beat_time.1.trunc()).unwrap();
-                            current_beat_time.1 -= current_beat_time.1.trunc();
-                        }
-                        while beat_sorter
-                            .next_beat_time()
-                            .unwrap_or((usize::MAX, F::infinity()))
-                            <= current_beat_time
-                        {
-                            let subscribers = subscribers.read().unwrap();
-                            let signal_subscribers = signal_subscribers.read().unwrap();
-                            if let Some((_, beats)) = beat_sorter.pop() {
-                                beats.iter().flatten().for_each(|beat| {
-                                    send_beat(&subscribers, beat);
-                                });
+                            TimelineEvent::Pause => {
+                                let signal_subscribers = signal_subscribers.read().unwrap();
                                 for signal_subscriber in signal_subscribers.iter() {
-                                    info!("🥁: ({}, {})", current_beat_time.0, current_beat_time.1);
-                                    signal_subscriber.send(BeatSignal::Beat(current_beat_time));
+                                    signal_subscriber.send(BeatSignal::Pause);
                                 }
-                            } else {
-                                panic!("Impossible! BeatSorter.pop() returns None while its next_beat_time() is Some()");
                             }
-                        }
-                        *project_settings
-                            .read()
-                            .unwrap()
-                            .current_beat
-                            .write()
-                            .unwrap() = current_beat_time;
-                    }
-                    TimelineEvent::Pause => {
-                        let signal_subscribers = signal_subscribers.read().unwrap();
-                        for signal_subscriber in signal_subscribers.iter() {
-                            signal_subscriber.send(BeatSignal::Pause);
-                        }
-                    }
-                    TimelineEvent::Stop => {
-                        *project_settings
-                            .read()
-                            .unwrap()
-                            .current_beat
-                            .write()
-                            .unwrap() = (0, F::from(0));
-                        current_beat_time = (0, F::from(0));
-                        beat_sorter.reset();
-                        let signal_subscribers = signal_subscribers.read().unwrap();
-                        for signal_subscriber in signal_subscribers.iter() {
-                            signal_subscriber.send(BeatSignal::Stop);
+                            TimelineEvent::Stop => {
+                                *project_settings
+                                    .read()
+                                    .unwrap()
+                                    .current_beat_time
+                                    .write()
+                                    .unwrap() = BeatTime::zero();
+                                current_beat_time = BeatTime::zero();
+                                beat_sorter.reset();
+                                let signal_subscribers = signal_subscribers.read().unwrap();
+                                for signal_subscriber in signal_subscribers.iter() {
+                                    signal_subscriber.send(BeatSignal::Stop);
+                                }
+                            }
                         }
                     }
                 }
             }
         });
+    }
+
+    pub fn reload_beat_sorter(&self) {
+        self.internal_signal.0.send(InternalSignal::ResetSorter);
     }
 }
 
@@ -171,6 +216,7 @@ impl Default for BeatMaker {
             subscribers: Default::default(),
             signal_subscribers: Default::default(),
             idgen: Default::default(),
+            internal_signal: bounded(1),
         }
     }
 }

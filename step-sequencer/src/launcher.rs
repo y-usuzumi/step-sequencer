@@ -1,7 +1,6 @@
 use std::{rc::Rc, sync::RwLockWriteGuard};
 
 use crossbeam::channel::Receiver;
-use derive_builder::Builder;
 use log::{error, info};
 
 use crate::{
@@ -14,6 +13,12 @@ use crate::{
     SSResult,
 };
 
+/// SSLauncher orchestrates the audio client, timeline, beatmaker.
+/// It handles the lifecycle of those components and estable communication
+/// between them.
+///
+/// SSLauncher also handles global commands such as play, pause and track
+/// operations.
 pub struct SSLauncher {
     timeline: Timeline,
     beatmaker: BeatMaker,
@@ -74,6 +79,7 @@ impl SSLauncher {
     pub fn send_command(&self, command: Command) -> SSResult<()> {
         match command {
             Command::ChangeTempo(tempo) => {
+                info!("Global tempo -> {}", tempo);
                 let project_settings = self.project.project_settings();
                 project_settings.write().unwrap().tempo = tempo;
             }
@@ -86,6 +92,7 @@ impl SSLauncher {
                         format!("Track {} does not exist", track_idx),
                     ),
                 ))?;
+                info!("[🛤️ {}] Toggle beat @ {}", track_idx + 1, beat + 1);
                 track.toggle_beat(beat);
             }
             Command::Resize(track_idx, size) => {
@@ -97,7 +104,21 @@ impl SSLauncher {
                         format!("Track {} does not exist", track_idx),
                     ),
                 ))?;
+                info!("[🛤️ {}] Resize -> {}", track_idx + 1, size);
                 track.resize(size);
+            }
+            Command::TempoScale(track_idx, scale) => {
+                let binding = self.project.tracks();
+                let mut trackmap = binding.write().unwrap();
+                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                    crate::error::CommandError::CommandExecutionError(
+                        command,
+                        format!("Track {} does not exist", track_idx),
+                    ),
+                ))?;
+                info!("[🛤️ {}] Tempo scale -> {}", track_idx + 1, scale);
+                track.set_tempo_scale(scale);
+                self.beatmaker.reload_beat_sorter();
             }
             Command::SetChannel(track_idx, channel) => {
                 let binding = self.project.tracks();
@@ -108,6 +129,7 @@ impl SSLauncher {
                         format!("Track {} does not exist", track_idx),
                     ),
                 ))?;
+                info!("[🛤️ {}] Channel -> {}", track_idx + 1, channel + 1);
                 track.set_default_channel(channel);
             }
             Command::SetNote(track_idx, note) => {
@@ -119,6 +141,7 @@ impl SSLauncher {
                         format!("Track {} does not exist", track_idx),
                     ),
                 ))?;
+                info!("[🛤️ {}] Note -> {}", track_idx + 1, note);
                 track.set_default_note(note);
             }
             Command::SetVelocity(track_idx, velocity) => {
@@ -130,6 +153,7 @@ impl SSLauncher {
                         format!("Track {} does not exist", track_idx),
                     ),
                 ))?;
+                info!("[🛤️ {}] Velocity -> {}", track_idx + 1, velocity);
                 track.set_default_velocity(velocity);
             }
             _ => {
