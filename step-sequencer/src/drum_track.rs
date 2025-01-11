@@ -53,6 +53,10 @@ impl DrumTrack {
         self.name.clone()
     }
 
+    pub fn set_name(&mut self, name: &str) {
+        self.name = name.to_string();
+    }
+
     pub fn get_tempo_scale(&self) -> TempoScale {
         self.tempo_scale
     }
@@ -118,6 +122,10 @@ impl DrumTrack {
 
     pub fn len(&self) -> usize {
         self.beats.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.beats.is_empty()
     }
 
     pub fn get(&self, idx: usize) -> Option<&DrumTrackBeat> {

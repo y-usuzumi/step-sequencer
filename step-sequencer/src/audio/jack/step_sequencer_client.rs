@@ -229,7 +229,7 @@ fn process_beatmaker(
         let data = event.to_data()?;
         debug!("BeatMaker: MIDI data: {:?}", data);
         let time = match event {
-            ChannelVoiceEvent::NoteOff { .. } => 1,
+            ChannelVoiceEvent::NoteOff { .. } => 100,
             _ => 0,
         };
         let raw_midi = RawMidi { time, bytes: &data };

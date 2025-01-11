@@ -146,6 +146,9 @@ impl Tui {
                                     KeyCode::Char(' ') => {
                                         self.execute_command("play", &mut command_handler);
                                     }
+                                    KeyCode::Char('+') => {
+                                        self.execute_command("add_track", &mut command_handler);
+                                    }
                                     KeyCode::Esc => {
                                         self.execute_command("stop", &mut command_handler);
                                     }

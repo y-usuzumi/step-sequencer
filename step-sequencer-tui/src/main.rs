@@ -85,6 +85,20 @@ fn str_to_command(s: &str) -> SSResult<Command> {
             "play" => Ok(Command::PlayOrPause),
             "stop" => Ok(Command::Stop),
             "quit" => Ok(Command::Quit),
+            "add_track" => Ok(Command::AddTrack),
+            "debug" => Ok(Command::Debug),
+            "R" => {
+                // "(R)ename track"
+                if args.len() >= 2 {
+                    let track = args[0].parse::<usize>()? - 1;
+                    Ok(Command::RenameTrack(track, args[1].to_string()))
+                } else {
+                    Err(SSError::CommandError(CommandError::ArgumentError(
+                        command.to_string(),
+                        args.join(" "),
+                    )))
+                }
+            }
             "t" => {
                 // "(T)empo"
                 if args.len() >= 1 {

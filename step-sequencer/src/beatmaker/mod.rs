@@ -162,8 +162,13 @@ impl BeatMaker {
                                             let track_beat_time =
                                                 current_beat_time.stretch(tempo_scale);
                                             let next_track_beat_time = track_beat_time.add_integral(1).floor();
+                                            let next_beat_idx = if track.is_empty() {
+                                                0
+                                            } else {
+                                                next_track_beat_time.integral() % track.len()
+                                            };
                                             let next_beat = track
-                                                .get_as_beat(next_track_beat_time.integral() % track.len())
+                                                .get_as_beat(next_beat_idx)
                                                 .flatten();
                                             beat_sorter.push(track_id,
                                                 next_track_beat_time.compress(tempo_scale), next_beat);

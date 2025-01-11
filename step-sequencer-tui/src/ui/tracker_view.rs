@@ -60,6 +60,9 @@ impl<'a> StatefulWidget for TrackerView<'a> {
         let mut rows = vec![];
         let track_count = self.tracks.len();
         for (track_idx, track) in self.tracks.values().enumerate() {
+            if track.is_empty() {
+                continue;
+            }
             let tempo_scale = track.get_tempo_scale();
             let track_beat_time = self.current_beat_time.stretch(tempo_scale);
             let active_beat_idx = track_beat_time.integral() % track.len();

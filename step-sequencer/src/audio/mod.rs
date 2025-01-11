@@ -17,12 +17,15 @@ pub enum Command {
     Stop,
     Quit,
     ChangeTempo(Tempo),
+    AddTrack,
+    RenameTrack(usize, String),
     ToggleBeat(usize, usize),
     Resize(usize, usize),
     TempoScale(usize, F),
     SetChannel(usize, Channel),
     SetVelocity(usize, Velocity),
     SetNote(usize, Note),
+    Debug,
 }
 
 impl fmt::Display for Command {
