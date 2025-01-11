@@ -11,5 +11,6 @@ You don't get to do something at any time of your discretion.
 
 With the Pub/Sub model, I can get a receiver channel of beatmaker's MIDI events, which I can drain on every process cycle.
 
-TODO: Assign a timestamp to every midi event sent from BeatMaker, so that I can put the message aside if I decide it's too early to send it
-to the output port.
+### Update 2025/01/10:
+I have recently implemented tempo scaling, which allows relative scaling of a single track relative to the global tempo.
+It is currently done by introducing BeatSorter, which maintains a search tree that sorts the upcoming notes from each track by their absolute position in the unit of global beat time. On every tick BeatMaker receives from Timeline, it pops notes from BeatSorter whose beat time is earlier than the current global beat time.
