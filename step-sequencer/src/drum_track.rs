@@ -14,6 +14,10 @@ pub enum DrumTrackBeat {
     OverrideBeat(Beat),
 }
 
+/// Represents a track.
+/// Each track contains a series of beats (can be empty)
+/// and a tempo scale which is respected by BeatMaker
+/// to stretch its own tempo in relation to the global tempo.
 pub struct DrumTrack {
     name: String,
     tempo_scale: TempoScale,
@@ -106,6 +110,10 @@ impl DrumTrack {
 
     pub fn resize(&mut self, size: usize) {
         self.beats.resize(size, Unset);
+    }
+
+    pub fn set_tempo_scale(&mut self, tempo_scale: F) {
+        self.tempo_scale = tempo_scale;
     }
 
     pub fn len(&self) -> usize {

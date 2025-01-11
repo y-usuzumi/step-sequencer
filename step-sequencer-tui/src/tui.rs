@@ -275,7 +275,7 @@ TODO
         let current_beat = {
             let binding = self.project.project_settings();
             let binding = binding.read().unwrap();
-            let x = *binding.current_beat.read().unwrap();
+            let x = *binding.current_beat_time.read().unwrap();
             x
         };
 
@@ -341,10 +341,10 @@ TODO
     fn render_info_view(&self, frame: &mut Frame, area: Rect) {
         let project_settings = self.project.project_settings();
         let project_settings = project_settings.read().unwrap();
-        let (current_beat, current_beat_millis) = *project_settings.current_beat.read().unwrap();
+        let current_beat_time = *project_settings.current_beat_time.read().unwrap();
         let info = List::new(vec![
             format!("Tempo: {}", project_settings.tempo),
-            format!("Current beat: {}+{}", current_beat, current_beat_millis),
+            format!("Current beat: {}", current_beat_time),
         ])
         .block(Block::bordered().title("Info"));
         frame.render_widget(info, area);

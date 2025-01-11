@@ -1,20 +1,19 @@
 mod tui;
 mod ui;
-use std::{rc::Rc, sync::OnceLock};
+use std::sync::OnceLock;
 
 use crossbeam::channel::{unbounded, Sender};
 use log::info;
 use step_sequencer::{
     audio::Command,
-    beatmaker::{
-        pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
-        BeatMaker,
+    beatmaker::pattern::{
+        ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND,
     },
     error::{CommandError, SSError},
     launcher::SSLauncher,
     midi::{note::Note, Channel, Velocity},
-    project::Project,
-    timeline::{Timeline, TimelineState},
+    project::F,
+    timeline::TimelineState,
     SSResult,
 };
 use tui::{Tui, TuiLogger};
@@ -143,6 +142,23 @@ fn str_to_command(s: &str) -> SSResult<Command> {
                     let track = args[0].parse::<usize>()? - 1;
                     let note = args[1].parse::<Note>()?;
                     Ok(Command::SetNote(track, note))
+                } else {
+                    Err(SSError::CommandError(CommandError::ArgumentError(
+                        command.to_string(),
+                        args.join(" "),
+                    )))
+                }
+            }
+            "ts" => {
+                if args.len() >= 2 {
+                    let track = args[0].parse::<usize>()? - 1;
+                    let numer = args[1].parse::<u64>()?;
+                    let denom = if args.len() >= 3 {
+                        args[2].parse::<u64>()?
+                    } else {
+                        1
+                    };
+                    Ok(Command::TempoScale(track, F::new(numer, denom)))
                 } else {
                     Err(SSError::CommandError(CommandError::ArgumentError(
                         command.to_string(),

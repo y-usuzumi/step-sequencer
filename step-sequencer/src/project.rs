@@ -4,6 +4,7 @@ use fraction::Fraction;
 use indexmap::IndexMap;
 
 use crate::{
+    beatmaker::beat_time::BeatTime,
     drum_track::DrumTrack,
     id::{new_id, SSId},
 };
@@ -11,7 +12,6 @@ use crate::{
 pub type F = Fraction;
 
 pub type TrackMap = IndexMap<SSId, DrumTrack>;
-pub type BeatTime = (usize, F); // (beats, micros)
 pub type Tempo = u16;
 pub type TempoScale = F;
 
@@ -22,14 +22,14 @@ pub struct Project {
 
 pub struct ProjectSettings {
     pub tempo: Tempo,
-    pub current_beat: Arc<RwLock<BeatTime>>,
+    pub current_beat_time: Arc<RwLock<BeatTime>>,
 }
 
 impl Default for ProjectSettings {
     fn default() -> Self {
         Self {
-            tempo: 110,
-            current_beat: Arc::new(RwLock::new((0, F::from(0)))),
+            tempo: 220,
+            current_beat_time: Arc::new(RwLock::new(BeatTime::zero())),
         }
     }
 }
