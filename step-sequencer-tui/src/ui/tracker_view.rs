@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use log::info;
 use ratatui::{
     layout::Constraint,
@@ -36,10 +37,10 @@ impl<'a> TrackerView<'a> {
     }
 }
 
-fn display_beat(beat: &Option<Beat>) -> String {
-    match *beat {
+fn display_beats(beats: &Option<Vec<Beat>>) -> String {
+    match *beats {
         None => "".to_string(),
-        Some(beat) => beat.note.to_string(),
+        Some(ref beats) => beats.iter().map(|b| b.note.to_string()).join(","),
     }
 }
 
@@ -66,7 +67,7 @@ impl<'a> StatefulWidget for TrackerView<'a> {
             let tempo_scale = track.get_tempo_scale();
             let track_beat_time = self.current_beat_time.stretch(tempo_scale);
             let active_beat_idx = track_beat_time.integral() % track.len();
-            for (beat_idx, beat) in track.iter_as_beats().enumerate() {
+            for (beat_idx, beats_in_track) in track.iter_as_beats().enumerate() {
                 if rows.len() < track.len() {
                     rows.resize(track.len() + 1, vec![Cell::new(""); track_count]);
                 }
@@ -75,7 +76,8 @@ impl<'a> StatefulWidget for TrackerView<'a> {
                 } else {
                     styles.default_cell_bg
                 };
-                rows[beat_idx][track_idx] = Cell::new(display_beat(&beat)).bg(row_bg_style);
+                rows[beat_idx][track_idx] =
+                    Cell::new(display_beats(&beats_in_track)).bg(row_bg_style);
             }
         }
         let rows: Vec<Row> = rows.into_iter().map(|r| Row::new(r)).collect();

@@ -1,4 +1,4 @@
-use std::sync::RwLockReadGuard;
+use std::{iter::repeat, sync::RwLockReadGuard};
 
 use log::debug;
 
@@ -66,28 +66,40 @@ pub struct ExampleDiscoDrumTracks {
     cymbal: Beat,
 }
 
+fn repeat_slice<T: Clone>(slice: &[T], count: usize) -> Vec<T> {
+    repeat(slice)
+        .take(count)
+        .flatten()
+        .map(|elem| elem.clone())
+        .collect()
+}
+
 impl ExampleDrumTracks for ExampleDiscoDrumTracks {
     fn kick(&self) -> DrumTrack {
-        DrumTrack::with_beats("Kick", self.kick, &[DefaultBeat, Unset].repeat(8))
+        DrumTrack::with_beats("Kick", self.kick, &repeat_slice(&[DefaultBeat, Unset], 8))
     }
 
     fn snare(&self) -> DrumTrack {
         DrumTrack::with_beats(
             "Snare",
             self.snare,
-            &[Unset, Unset, DefaultBeat, Unset].repeat(4),
+            &repeat_slice(&[Unset, Unset, DefaultBeat, Unset], 4),
         )
     }
 
     fn hihat(&self) -> DrumTrack {
-        DrumTrack::with_beats("Hi-hat closed", self.hihat, &[DefaultBeat, Unset].repeat(8))
+        DrumTrack::with_beats(
+            "Hi-hat closed",
+            self.hihat,
+            &repeat_slice(&[DefaultBeat, Unset], 8),
+        )
     }
 
     fn hihat_open(&self) -> DrumTrack {
         DrumTrack::with_beats(
             "Hi-hat open",
             self.hihat_open,
-            &[Unset, DefaultBeat].repeat(8),
+            &repeat_slice(&[Unset, DefaultBeat], 8),
         )
     }
 
@@ -97,7 +109,7 @@ impl ExampleDrumTracks for ExampleDiscoDrumTracks {
             self.cymbal,
             &[DefaultBeat]
                 .into_iter()
-                .chain([Unset].repeat(31))
+                .chain(repeat_slice(&[Unset], 31))
                 .collect::<Vec<DrumTrackBeat>>(),
         )
     }

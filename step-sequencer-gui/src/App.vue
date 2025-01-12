@@ -58,9 +58,9 @@ onMounted(async () => {
     <p>Current tempo: {{ tempo }}</p>
 
     <form class="row" @submit.prevent="greet">
-      <button @click="play" :disabled="status == 'playing'">Start</button>
-      <button @click="pause" :disabled="status != 'playing'">Pause</button>
-      <button @click="stop" :disabled="status == 'stopped'">Stop</button>
+      <button @click="play" v-if="status != 'playing'">▶️</button>
+      <button @click="pause" v-if="status == 'playing'">⏸️</button>
+      <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
     </form>
     <p>{{ greetMsg }}</p>
   </main>

@@ -100,7 +100,7 @@ impl BeatMaker {
             beat_sorter.push(
                 *track_id,
                 track_beat_time.compress(tempo_scale),
-                track.get_as_beat(track_beat_time.integral()).flatten(),
+                track.get_as_beats(track_beat_time.integral()).flatten(),
             );
         }
     }
@@ -153,9 +153,10 @@ impl BeatMaker {
                                     }
                                     let (beat_time, beats) = beat_sorter.pop().unwrap();
                                     let tracks = tracks.read().unwrap();
-                                    for (track_id, beat) in beats {
-                                        if let Some(beat) = beat {
-                                            send_beat(&subscribers, &beat);
+                                    for (track_id, beats_in_track) in beats {
+                                        if let Some(bs) = beats_in_track {
+                                            bs.iter().for_each(|b| send_beat(&subscribers, &b));
+
                                         }
                                         if let Some(track) = tracks.get(&track_id) {
                                             let tempo_scale = track.get_tempo_scale();
@@ -168,7 +169,7 @@ impl BeatMaker {
                                                 next_track_beat_time.integral() % track.len()
                                             };
                                             let next_beat = track
-                                                .get_as_beat(next_beat_idx)
+                                                .get_as_beats(next_beat_idx)
                                                 .flatten();
                                             beat_sorter.push(track_id,
                                                 next_track_beat_time.compress(tempo_scale), next_beat);

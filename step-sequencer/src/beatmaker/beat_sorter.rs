@@ -8,7 +8,7 @@ use super::BeatTime;
 /// and ensure they are played in order.
 #[derive(Default)]
 pub struct BeatSorter {
-    treemap: BTreeMap<BeatTime, Vec<(SSId, Option<Beat>)>>,
+    treemap: BTreeMap<BeatTime, Vec<(SSId, Option<Vec<Beat>>)>>,
 }
 
 impl BeatSorter {
@@ -24,18 +24,18 @@ impl BeatSorter {
         self.treemap.clear();
     }
 
-    pub fn push(&mut self, track_id: SSId, beat_time: BeatTime, beat: Option<Beat>) {
+    pub fn push(&mut self, track_id: SSId, beat_time: BeatTime, beat: Option<Vec<Beat>>) {
         self.treemap
             .entry(beat_time)
             .or_default()
             .push((track_id, beat));
     }
 
-    pub fn pop(&mut self) -> Option<(BeatTime, Vec<(SSId, Option<Beat>)>)> {
+    pub fn pop(&mut self) -> Option<(BeatTime, Vec<(SSId, Option<Vec<Beat>>)>)> {
         self.treemap.pop_first()
     }
 
-    pub fn top(&self) -> Option<(&BeatTime, &Vec<(SSId, Option<Beat>)>)> {
+    pub fn top(&self) -> Option<(&BeatTime, &Vec<(SSId, Option<Vec<Beat>>)>)> {
         self.treemap.first_key_value()
     }
 }

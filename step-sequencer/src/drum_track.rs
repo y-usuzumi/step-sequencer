@@ -7,11 +7,11 @@ use crate::{
 
 use crate::project::F;
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum DrumTrackBeat {
     Unset,
     DefaultBeat,
-    OverrideBeat(Beat),
+    OverrideBeat(Vec<Beat>),
 }
 
 /// Represents a track.
@@ -132,15 +132,17 @@ impl DrumTrack {
         self.beats.get(idx)
     }
 
-    pub fn get_as_beat(&self, idx: usize) -> Option<Option<Beat>> {
-        self.beats.get(idx).map(|b| self.drum_track_beat_to_beat(b))
+    pub fn get_as_beats(&self, idx: usize) -> Option<Option<Vec<Beat>>> {
+        self.beats
+            .get(idx)
+            .map(|b| self.drum_track_beat_to_beats(b))
     }
 
-    fn drum_track_beat_to_beat(&self, beat: &DrumTrackBeat) -> Option<Beat> {
+    fn drum_track_beat_to_beats(&self, beat: &DrumTrackBeat) -> Option<Vec<Beat>> {
         match beat {
             Unset => None,
-            DefaultBeat => Some(self.default_beat),
-            OverrideBeat(beat) => Some(*beat),
+            DefaultBeat => Some(vec![self.default_beat]),
+            OverrideBeat(beat) => Some(beat.clone()),
         }
     }
 
@@ -148,8 +150,8 @@ impl DrumTrack {
         self.beats.iter()
     }
 
-    pub fn iter_as_beats(&self) -> impl Iterator<Item = Option<Beat>> + use<'_> {
-        self.beats.iter().map(|b| self.drum_track_beat_to_beat(b))
+    pub fn iter_as_beats(&self) -> impl Iterator<Item = Option<Vec<Beat>>> + use<'_> {
+        self.beats.iter().map(|b| self.drum_track_beat_to_beats(b))
     }
 
     #[cfg(test)]
