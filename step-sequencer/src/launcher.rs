@@ -78,7 +78,9 @@ impl SSLauncher {
 
     pub fn send_command(&self, command: Command) -> SSResult<()> {
         match command {
-            Command::Debug => {}
+            Command::Debug => {
+                
+            }
             Command::ChangeTempo(tempo) => {
                 info!("Global tempo -> {}", tempo);
                 let project_settings = self.project.project_settings();
