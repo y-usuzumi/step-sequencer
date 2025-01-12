@@ -2,5 +2,6 @@
 resolver = "2"
 members = [
     "step-sequencer",
-    "step-sequencer-tui"
+    "step-sequencer-tui",
+    "step-sequencer-gui/src-tauri",
 ]
