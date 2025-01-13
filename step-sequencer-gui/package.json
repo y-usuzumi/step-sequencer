@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri-x11": "env GDK_BACKEND=x11 tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
