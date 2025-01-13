@@ -41,6 +41,7 @@ fn send_beat(subscribers: &RwLockReadGuard<BeatMakerSubscriberMap>, beat: &Beat)
     }
 }
 
+#[derive(Clone, serde::Serialize)]
 pub enum BeatSignal {
     Beat(BeatTime),
     Pause,
@@ -61,7 +62,7 @@ type SignalSubscriberMap = Vec<Sender<BeatSignal>>;
 pub struct BeatMaker {
     subscribers: Arc<RwLock<BeatMakerSubscriberMap>>,
     signal_subscribers: Arc<RwLock<SignalSubscriberMap>>,
-    idgen: RefCell<AutoIncrementIdGen>,
+    idgen: RwLock<AutoIncrementIdGen>,
     internal_signal: (Sender<InternalSignal>, Receiver<InternalSignal>),
 }
 
@@ -70,7 +71,7 @@ impl BeatMaker {
         Default::default()
     }
     pub fn subscribe(&self) -> BeatMakerSubscription {
-        let next_id = self.idgen.borrow_mut().next();
+        let next_id = self.idgen.write().unwrap().next();
         let (sender, receiver) = unbounded();
         let mut subscriber_map = self.subscribers.write().unwrap();
         subscriber_map.insert(next_id, sender);

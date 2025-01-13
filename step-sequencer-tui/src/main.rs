@@ -1,6 +1,6 @@
 mod tui;
 mod ui;
-use std::sync::OnceLock;
+use std::{rc::Weak, sync::OnceLock};
 
 use crossbeam::channel::{unbounded, Sender};
 use log::info;
@@ -44,8 +44,8 @@ fn main() -> SSResult<()> {
         project.add_track(track);
     }
     ss_launcher.start()?;
-    let mut tui = Tui::new(project);
-    tui.run_tui(beat_receiver, tui_log_receiver, |s: &str| {
+    let mut tui = Tui::new(&mut ss_launcher);
+    tui.run_tui(beat_receiver, tui_log_receiver, |ss_launcher, s: &str| {
         let command = str_to_command(s);
         let timeline = ss_launcher.timeline();
         match command {

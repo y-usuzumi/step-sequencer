@@ -1,10 +1,37 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from '@tauri-apps/api/event';
+
+type Sign = "Plus" | "Minus";
+
+interface Rational {
+  Rational: [Sign, [number, number]] // [Sign, [numer, denom]]
+}
+
+interface Infinity {
+  Infinity: Sign,
+}
+
+type NaN = "NaN";
+
+interface BeatTime {
+  integral: number;
+  frac: Rational | Infinity | NaN,
+}
+
+interface Beat {
+  Beat: BeatTime
+}
+
+type Pause = "Pause";
+type Stop = "Stop";
+
+type BeatSignal = Beat | Pause | Stop
 
 const greetMsg = ref("Ready");
-const name = ref("");
 const tempo = ref(0);
+const current_beat = ref("0");
 const status = ref("stopped")
 
 async function play() {
@@ -36,6 +63,22 @@ async function init() {
 
 onMounted(async () => {
   await init();
+  listen<BeatSignal>('beat-signal', (event) => {
+    if ('Pause' === event.payload) {
+      // Do nothing
+    } else if ('Stop' === event.payload) {
+      current_beat.value = "0";
+    } else {
+      let integral = event.payload.Beat.integral;
+      let frac = event.payload.Beat.frac;
+      if ('NaN' === frac || 'Infinity' in frac) {
+        current_beat.value = `WTF (${event.payload})`;
+      } else {
+        let [sign, [numer, denom]] = frac.Rational;
+        current_beat.value = `${sign === 'Plus' ? '' : '-'}${integral}+${numer}/${denom}`;
+      }
+    }
+});
 });
 
 </script>
@@ -56,8 +99,9 @@ onMounted(async () => {
       </a>
     </div>
     <p>Current tempo: {{ tempo }}</p>
+    <p>Current beat: {{  current_beat }}</p>
 
-    <form class="row" @submit.prevent="greet">
+    <form class="row" @submit.prevent="true">
       <button @click="play" v-if="status != 'playing'">▶️</button>
       <button @click="pause" v-if="status == 'playing'">⏸️</button>
       <button @click="stop" :disabled="status == 'stopped'">⏹️</button>

@@ -40,13 +40,13 @@ pub trait SSClient {
 }
 
 #[cfg(feature = "jack")]
-pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient> {
+pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient + Send> {
     use self::jack::SSJackClient;
     Box::new(SSJackClient::new(beatmaker_subscription))
 }
 
 #[cfg(feature = "coreaudio")]
-pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient> {
+pub fn create_ss_client(beatmaker_subscription: BeatMakerSubscription) -> Box<dyn SSClient + Send> {
     use self::coreaudio::SSCoreAudioClient;
     Box::new(SSCoreAudioClient::new(beatmaker_subscription))
 }

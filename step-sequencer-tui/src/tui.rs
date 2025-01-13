@@ -1,4 +1,7 @@
-use std::{rc::Rc, thread};
+use std::{
+    rc::{Rc, Weak},
+    thread,
+};
 
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use crossterm::event::{self, Event, KeyCode};
@@ -14,6 +17,7 @@ use step_sequencer::{
     beatmaker::BeatSignal,
     drum_track::{DrumTrack, DrumTrackBeat},
     error::SSError,
+    launcher::SSLauncher,
     project::Project,
     SSResult,
 };
@@ -22,22 +26,22 @@ use tui_input::Input;
 
 use crate::ui::{tracker_view::TrackerView, BeatPad, Popup};
 
-pub(crate) struct Tui {
+pub(crate) struct Tui<'a> {
     input: Input,
     input_mode: InputMode,
     error: Option<SSError>,
     logs: Vec<String>,
-    project: Rc<Project>,
+    ss_launcher: &'a mut SSLauncher,
 }
 
-impl Tui {
-    pub fn new(project: Rc<Project>) -> Self {
+impl<'a> Tui<'a> {
+    pub fn new(ss_launcher: &'a mut SSLauncher) -> Self {
         Self {
             input: Input::default(),
             input_mode: InputMode::Normal,
             error: None,
             logs: Vec::new(),
-            project,
+            ss_launcher,
         }
     }
 }
@@ -84,12 +88,12 @@ enum TuiEvent {
     Quit,
 }
 
-impl Tui {
+impl<'a> Tui<'a> {
     pub fn run_tui(
         &mut self,
         beat_signal_receiver: Receiver<BeatSignal>,
         log_receiver: Receiver<String>,
-        mut command_handler: impl FnMut(&str) -> SSResult<()>,
+        mut command_handler: impl FnMut(&mut SSLauncher, &str) -> SSResult<()>,
     ) -> SSResult<()> {
         let mut terminal = ratatui::init();
         let (event_sender, event_receiver) = unbounded();
@@ -199,9 +203,9 @@ impl Tui {
 
     fn execute_command<F>(&mut self, command: &str, command_handler: &mut F)
     where
-        F: FnMut(&str) -> SSResult<()>,
+        F: FnMut(&mut SSLauncher, &str) -> SSResult<()>,
     {
-        match command_handler(command) {
+        match command_handler(self.ss_launcher, command) {
             Ok(()) => {
                 self.input.reset();
             }
@@ -273,10 +277,10 @@ TODO
             .padding(Padding::uniform(1));
         frame.render_widget(&beat_view_block, area);
         let beat_view_area = beat_view_block.inner(area);
-        let binding = self.project.tracks();
+        let binding = self.ss_launcher.project().tracks();
         let tracks = binding.read().unwrap();
         let current_beat = {
-            let binding = self.project.project_settings();
+            let binding = self.ss_launcher.project().project_settings();
             let binding = binding.read().unwrap();
             let x = *binding.current_beat_time.read().unwrap();
             x
@@ -342,7 +346,7 @@ TODO
     }
 
     fn render_info_view(&self, frame: &mut Frame, area: Rect) {
-        let project_settings = self.project.project_settings();
+        let project_settings = self.ss_launcher.project().project_settings();
         let project_settings = project_settings.read().unwrap();
         let current_beat_time = *project_settings.current_beat_time.read().unwrap();
         let info = List::new(vec![

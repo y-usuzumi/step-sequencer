@@ -22,8 +22,8 @@ use crate::{
 pub struct SSLauncher {
     timeline: Timeline,
     beatmaker: BeatMaker,
-    project: Rc<Project>,
-    ss_client: Box<dyn SSClient>,
+    project: Project,
+    ss_client: Box<dyn SSClient + Send>,
 }
 
 fn get_track<'a>(
@@ -41,7 +41,7 @@ impl SSLauncher {
     pub fn new() -> Self {
         let timeline = Timeline::default();
         let beatmaker = BeatMaker::new();
-        let project = Rc::new(Project::new());
+        let project = Project::new();
         let ss_client = create_ss_client(beatmaker.subscribe());
         Self {
             timeline,
@@ -64,8 +64,8 @@ impl SSLauncher {
         self.ss_client.stop()
     }
 
-    pub fn project(&self) -> Rc<Project> {
-        self.project.clone()
+    pub fn project(&self) -> &Project {
+        &self.project
     }
 
     pub fn timeline(&self) -> &Timeline {
@@ -78,9 +78,7 @@ impl SSLauncher {
 
     pub fn send_command(&self, command: Command) -> SSResult<()> {
         match command {
-            Command::Debug => {
-                
-            }
+            Command::Debug => {}
             Command::ChangeTempo(tempo) => {
                 info!("Global tempo -> {}", tempo);
                 let project_settings = self.project.project_settings();
