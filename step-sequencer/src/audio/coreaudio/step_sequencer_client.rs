@@ -11,7 +11,6 @@ use crossbeam::channel::{bounded, Sender};
 use crossbeam::select;
 use log::{debug, info};
 use std::f64::consts::PI;
-use std::marker::PhantomData;
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
@@ -19,7 +18,6 @@ pub struct SSCoreAudioClient {
     beatmaker_subscription: Arc<BeatMakerSubscription>,
     stop_signal_sender: Option<Sender<()>>,
     processor_thread: Option<JoinHandle<SSResult<()>>>,
-    __unimpl_sync: PhantomData<*const ()>, // Do not allow shared references in multiple threads
 }
 
 impl SSCoreAudioClient {
@@ -28,7 +26,6 @@ impl SSCoreAudioClient {
             beatmaker_subscription: Arc::new(beatmaker_subscription),
             stop_signal_sender: None,
             processor_thread: None,
-            __unimpl_sync: PhantomData,
         }
     }
 }
@@ -69,7 +66,6 @@ impl SSClient for SSCoreAudioClient {
                     }
                 }
             }
-
             Ok(())
         });
         self.processor_thread = Some(join_handle);

@@ -1,6 +1,9 @@
+use serde::Serialize;
+
 use crate::project::F;
 
-#[derive(PartialEq, Eq, Ord, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Ord, Clone, Copy, Debug, Serialize)]
+
 pub struct BeatTime {
     integral: usize,
     frac: F,

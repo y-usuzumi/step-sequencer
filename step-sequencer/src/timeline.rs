@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::BTreeMap,
     sync::{Arc, Condvar, Mutex, RwLock},
     thread,
@@ -33,7 +32,7 @@ pub struct Timeline {
     interval: Duration,
     /// This is only updated upon pause/stop
     current_tick: Arc<RwLock<Tick>>,
-    idgen: RefCell<AutoIncrementIdGen>,
+    idgen: RwLock<AutoIncrementIdGen>,
     start_mutex: Arc<Mutex<bool>>,
     state_condvar: Arc<Condvar>,
     subscribers: Arc<RwLock<TimelineSubscriberMap>>,
@@ -48,7 +47,7 @@ impl Timeline {
     }
 
     pub fn subscribe(&self) -> TimelineSubscription {
-        let next_id = self.idgen.borrow_mut().next();
+        let next_id = self.idgen.write().unwrap().next();
         let (sender, receiver) = bounded(5);
         self.subscribers.write().unwrap().insert(next_id, sender);
         return TimelineSubscription {
