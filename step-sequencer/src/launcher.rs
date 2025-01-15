@@ -39,7 +39,7 @@ fn get_track<'a>(
 
 impl SSLauncher {
     pub fn new() -> Self {
-        let timeline = Timeline::default();
+        let timeline = Timeline::new();
         let beatmaker = BeatMaker::new();
         let project = Project::new();
         let ss_client = create_ss_client(beatmaker.subscribe());
