@@ -13,12 +13,12 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
     Frame,
 };
+use step_sequencer::beatmaker::BeatMakerEvent;
 use step_sequencer::{
-    beatmaker::BeatSignal,
+    beatmaker::BeatMakerSubscription,
     drum_track::{DrumTrack, DrumTrackBeat},
     error::SSError,
     launcher::SSLauncher,
-    project::Project,
     SSResult,
 };
 use tui_input::backend::crossterm::EventHandler;
@@ -91,7 +91,7 @@ enum TuiEvent {
 impl<'a> Tui<'a> {
     pub fn run_tui(
         &mut self,
-        beat_signal_receiver: Receiver<BeatSignal>,
+        beatmaker_subscription: BeatMakerSubscription,
         log_receiver: Receiver<String>,
         mut command_handler: impl FnMut(&mut SSLauncher, &str) -> SSResult<()>,
     ) -> SSResult<()> {
@@ -113,7 +113,7 @@ impl<'a> Tui<'a> {
             });
         }
         thread::spawn(move || loop {
-            if let Ok(signal) = beat_signal_receiver.recv() {
+            if let Ok(signal) = beatmaker_subscription.receiver.recv() {
                 match signal {
                     _ => {
                         // Be it Beat, Pause or Stop, redraw anyways
