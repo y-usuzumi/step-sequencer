@@ -229,7 +229,7 @@ fn process_beatmaker(
         match *event {
             crate::beatmaker::BeatMakerEvent::MIDIEvent(evt) => {
                 let data = evt.to_data()?;
-                info!("BeatMaker: MIDI data: {:?}", data);
+                debug!("BeatMaker: MIDI data: {:?}", data);
                 let raw_midi = RawMidi {
                     time: idx,
                     bytes: &data,
