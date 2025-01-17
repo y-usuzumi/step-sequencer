@@ -1,17 +1,41 @@
+use std::fmt;
 use std::{rc::Rc, sync::RwLockWriteGuard};
 
-use crossbeam::channel::Receiver;
 use log::{error, info};
 
 use crate::{
-    audio::{create_ss_client, Command, SSClient},
-    beatmaker::{BeatMaker, BeatSignal},
+    audio::{create_ss_client, SSClient},
+    beatmaker::{BeatMaker, BeatMakerSubscription},
     drum_track::DrumTrack,
     error::SSError,
-    project::{Project, TrackMap},
+    midi::{note::Note, Channel, Velocity},
+    project::{Project, Tempo, TrackMap, F},
     timeline::Timeline,
     SSResult,
 };
+
+#[derive(Clone, Debug)]
+pub enum Command {
+    PlayOrPause,
+    Stop,
+    Quit,
+    ChangeTempo(Tempo),
+    AddTrack,
+    RenameTrack(usize, String),
+    ToggleBeat(usize, usize),
+    Resize(usize, usize),
+    TempoScale(usize, F),
+    SetChannel(usize, Channel),
+    SetVelocity(usize, Velocity),
+    SetNote(usize, Note),
+    Debug,
+}
+
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 /// SSLauncher orchestrates the audio client, timeline, beatmaker.
 /// It handles the lifecycle of those components and estable communication
@@ -39,7 +63,7 @@ fn get_track<'a>(
 
 impl SSLauncher {
     pub fn new() -> Self {
-        let timeline = Timeline::default();
+        let timeline = Timeline::new();
         let beatmaker = BeatMaker::new();
         let project = Project::new();
         let ss_client = create_ss_client(beatmaker.subscribe());
@@ -72,8 +96,8 @@ impl SSLauncher {
         &self.timeline
     }
 
-    pub fn subscribe_beatmaker_signals(&self) -> Receiver<BeatSignal> {
-        self.beatmaker.subscribe_signals()
+    pub fn subscribe_to_beatmaker(&self) -> BeatMakerSubscription {
+        self.beatmaker.subscribe()
     }
 
     pub fn send_command(&self, command: Command) -> SSResult<()> {

@@ -223,18 +223,22 @@ fn process_beatmaker(
 ) -> SSResult<()> {
     // TODO: Can NOT use while loop to process all messages in the channel.
     // Find out why.
-    if let Ok(event) = &subscription.receiver.try_recv() {
-        debug!("BeatMaker: subscription ID: {:?}", subscription.id);
-        debug!("BeatMaker: Received event from: {:?}", event);
-        let data = event.to_data()?;
-        debug!("BeatMaker: MIDI data: {:?}", data);
-        let time = match event {
-            ChannelVoiceEvent::NoteOff { .. } => 100,
-            _ => 0,
-        };
-        let raw_midi = RawMidi { time, bytes: &data };
-        let mut midi_writer = port.writer(process_scope);
-        midi_writer.write(&raw_midi)?;
+    let mut midi_writer = port.writer(process_scope);
+    let mut idx = 0;
+    while let Ok(event) = &subscription.receiver.try_recv() {
+        match *event {
+            crate::beatmaker::BeatMakerEvent::MIDIEvent(evt) => {
+                let data = evt.to_data()?;
+                debug!("BeatMaker: MIDI data: {:?}", data);
+                let raw_midi = RawMidi {
+                    time: idx,
+                    bytes: &data,
+                };
+                midi_writer.write(&raw_midi)?;
+                idx += 1;
+            }
+            _ => {}
+        }
     }
     Ok(())
 }

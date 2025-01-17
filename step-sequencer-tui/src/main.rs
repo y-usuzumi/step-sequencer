@@ -1,16 +1,15 @@
 mod tui;
 mod ui;
-use std::{rc::Weak, sync::OnceLock};
+use std::sync::OnceLock;
 
 use crossbeam::channel::{unbounded, Sender};
 use log::info;
 use step_sequencer::{
-    audio::Command,
     beatmaker::pattern::{
         ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND,
     },
     error::{CommandError, SSError},
-    launcher::SSLauncher,
+    launcher::{Command, SSLauncher},
     midi::{note::Note, Channel, Velocity},
     project::F,
     timeline::TimelineState,
@@ -34,7 +33,7 @@ fn main() -> SSResult<()> {
         .unwrap();
     let mut ss_launcher = SSLauncher::new();
     let project = ss_launcher.project();
-    let beat_receiver = ss_launcher.subscribe_beatmaker_signals();
+    let beat_receiver = ss_launcher.subscribe_to_beatmaker();
     let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
     } else {

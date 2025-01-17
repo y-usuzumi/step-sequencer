@@ -1,10 +1,9 @@
 use std::{sync::Mutex, thread};
 
-use crossbeam::channel::Receiver;
 use step_sequencer::{
     beatmaker::{
         pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
-        BeatSignal,
+        BeatMakerEvent, BeatMakerSubscription,
     },
     launcher::SSLauncher,
     SSResult,
@@ -66,10 +65,18 @@ fn get_tempo(state: State<Mutex<AppState>>) -> u16 {
         .tempo
 }
 
-fn run_beat_signal_handler(app_handle: AppHandle, beat_signal_receiver: Receiver<BeatSignal>) {
+fn run_beatmaker_event_handler(
+    app_handle: AppHandle,
+    beatmaker_subscription: BeatMakerSubscription,
+) {
     thread::spawn(move || {
-        for beat_signal in beat_signal_receiver.iter() {
-            app_handle.emit("beat-signal", beat_signal).unwrap();
+        for event in beatmaker_subscription.receiver.iter() {
+            match event {
+                BeatMakerEvent::Beat(_) | BeatMakerEvent::Pause | BeatMakerEvent::Stop => {
+                    app_handle.emit("beat-signal", event).unwrap();
+                }
+                _ => {}
+            }
         }
     });
 }
@@ -86,11 +93,9 @@ pub fn run() {
             greet, play, pause, stop, get_tempo
         ])
         .setup(|app| {
-            let beat_signal_receiver = ss_launcher.subscribe_beatmaker_signals();
-            app.manage(Mutex::new(AppState {
-                ss_launcher: ss_launcher,
-            }));
-            run_beat_signal_handler(app.handle().clone(), beat_signal_receiver);
+            let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();
+            app.manage(Mutex::new(AppState { ss_launcher }));
+            run_beatmaker_event_handler(app.handle().clone(), beatmaker_event_subscription);
             Ok(())
         })
         .run(tauri::generate_context!())

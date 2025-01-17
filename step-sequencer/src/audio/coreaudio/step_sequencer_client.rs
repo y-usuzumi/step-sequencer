@@ -1,4 +1,4 @@
-use crate::beatmaker::{BeatMaker, BeatMakerSubscription};
+use crate::beatmaker::{BeatMaker, BeatMakerEvent, BeatMakerSubscription};
 use crate::error::SSError;
 use crate::midi::ChannelVoiceEvent;
 use crate::project::Project;
@@ -46,19 +46,16 @@ impl SSClient for SSCoreAudioClient {
                 select! {
                     recv(beatmaker_subscription.receiver) -> event => {
                         let event = event?;
-                        debug!(
-                            "BeatMaker: subscription ID: {:?}",
-                            beatmaker_subscription.id
-                        );
-                        debug!("BeatMaker: Received event from: {:?}", event);
-                        let data = event.to_data()?;
-                        debug!("BeatMaker: MIDI data: {:?}", data);
-                        let time = match event {
-                            ChannelVoiceEvent::NoteOff { .. } => 1,
-                            _ => 0,
-                        };
-                        let packet_buffer = PacketBuffer::new(time, &data);
-                        source.received(&packet_buffer).unwrap();
+                        match event {
+                            BeatMakerEvent::MIDIEvent(evt) => {
+                                let data = evt.to_data()?;
+                                debug!("BeatMaker: MIDI data: {:?}", data);
+                                let packet_buffer = PacketBuffer::new(0, &data);
+                                source.received(&packet_buffer).unwrap();
+                            }
+                            _ => {}
+                        }
+
                     }
                     recv(stop_signal_receiver) -> stop_signal => {
                         let _ = stop_signal?;

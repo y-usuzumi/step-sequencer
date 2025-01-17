@@ -8,7 +8,7 @@ pub type Key = u8; // TODO:
 pub type Channel = u8;
 pub type Velocity = u8;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, serde::Serialize)]
 pub enum ChannelVoiceEvent {
     NoteOn {
         channel: Channel,

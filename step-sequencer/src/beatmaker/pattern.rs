@@ -1,35 +1,14 @@
-use std::{iter::repeat, sync::RwLockReadGuard};
+use std::iter::repeat;
 
 use log::debug;
 
 use crate::{
     drum_track::{DrumTrack, DrumTrackBeat},
-    midi::{note::Note, ChannelVoiceEvent, Key},
+    midi::note::Note,
 };
 
 use crate::drum_track::Beat;
 use crate::drum_track::DrumTrackBeat::*;
-
-use super::BeatMakerSubscriberMap;
-
-fn send_key<K>(subscribers: &RwLockReadGuard<BeatMakerSubscriberMap>, key: &K)
-where
-    K: Clone + Into<Key>,
-{
-    debug!("BeatMaker: Sending events");
-    for sender in subscribers.values() {
-        let _ = sender.send(ChannelVoiceEvent::NoteOn {
-            channel: 9, // is 10 to human
-            key: key.clone().into(),
-            velocity: 80,
-        });
-        let _ = sender.send(ChannelVoiceEvent::NoteOff {
-            channel: 9, // is 10 to human
-            key: key.clone().into(),
-            velocity: 80,
-        });
-    }
-}
 
 macro_rules! beat {
     ($channel:expr, $note:expr, $velocity:expr) => {

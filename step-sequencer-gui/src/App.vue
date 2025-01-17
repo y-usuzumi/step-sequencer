@@ -16,7 +16,6 @@ interface Infinity {
 type NaN = "NaN";
 
 interface BeatTime {
-  integral: number;
   frac: Rational | Infinity | NaN,
 }
 
@@ -64,18 +63,18 @@ async function init() {
 onMounted(async () => {
   await init();
   listen<BeatSignal>('beat-signal', (event) => {
+    console.log(event);
     if ('Pause' === event.payload) {
       // Do nothing
     } else if ('Stop' === event.payload) {
       current_beat.value = "0";
     } else {
-      let integral = event.payload.Beat.integral;
       let frac = event.payload.Beat.frac;
       if ('NaN' === frac || 'Infinity' in frac) {
         current_beat.value = `WTF (${event.payload})`;
       } else {
         let [sign, [numer, denom]] = frac.Rational;
-        current_beat.value = `${sign === 'Plus' ? '' : '-'}${integral}+${numer}/${denom}`;
+        current_beat.value = `${sign === 'Plus' ? '' : '-'}${numer}/${denom}`;
       }
     }
 });
