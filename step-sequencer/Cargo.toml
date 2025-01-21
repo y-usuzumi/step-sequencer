@@ -18,7 +18,9 @@ coremidi = { version = "0.8.0", optional = true }
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 fraction = { version = "0.15.3", features = ["with-serde-support"] }
 serde = { version = "1.0.217", features = ["derive"] }
+mach = { version = "0.3.2", optional = true }
+mockall = "0.13.1"
 
 [features]
 jack = ["dep:jack"]
-coreaudio = ["dep:coreaudio-rs", "dep:coremidi"]
+coreaudio = ["dep:coreaudio-rs", "dep:coremidi", "dep:mach"]

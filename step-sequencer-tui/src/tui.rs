@@ -115,9 +115,12 @@ impl<'a> Tui<'a> {
         thread::spawn(move || loop {
             if let Ok(signal) = beatmaker_subscription.receiver.recv() {
                 match signal {
-                    _ => {
+                    BeatMakerEvent::Beat(_) => {
                         // Be it Beat, Pause or Stop, redraw anyways
                         event_sender.send(TuiEvent::Redraw);
+                    }
+                    _ => {
+                        // Do not redraw for all events. This is too expensive and may cause UI to freeze
                     }
                 }
             }

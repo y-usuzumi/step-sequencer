@@ -9,5 +9,6 @@ pub mod midi;
 pub mod models;
 pub mod project;
 pub mod timeline;
+mod util;
 
 pub use error::SSResult;

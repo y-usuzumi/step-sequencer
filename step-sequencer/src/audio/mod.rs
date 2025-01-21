@@ -1,5 +1,6 @@
 use crate::beatmaker::BeatMakerSubscription;
 use crate::SSResult;
+pub mod adapter;
 #[cfg(feature = "coreaudio")]
 mod coreaudio;
 #[cfg(feature = "jack")]
