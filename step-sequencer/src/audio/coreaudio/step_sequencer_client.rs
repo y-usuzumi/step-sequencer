@@ -1,7 +1,5 @@
-use crate::beatmaker::{BeatMaker, BeatMakerEvent, BeatMakerSubscription};
+use crate::beatmaker::{BeatMakerEvent, BeatMakerSubscription};
 use crate::error::SSError;
-use crate::midi::ChannelVoiceEvent;
-use crate::project::Project;
 use crate::{audio::SSClient, SSResult};
 
 use coreaudio::audio_unit::render_callback::{self, data};
@@ -52,10 +50,9 @@ impl SSClient for SSCoreAudioClient {
                                 debug!("BeatMaker: MIDI data: {:?}", data);
                                 let packet_buffer = PacketBuffer::new(0, &data);
                                 source.received(&packet_buffer).unwrap();
-                            }
+                            },
                             _ => {}
                         }
-
                     }
                     recv(stop_signal_receiver) -> stop_signal => {
                         let _ = stop_signal?;

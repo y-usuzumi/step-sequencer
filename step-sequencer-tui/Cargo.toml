@@ -21,3 +21,6 @@ step-sequencer = { path = "../step-sequencer", features = ["jack"] }
 
 [target.'cfg(target_os="macos")'.dependencies]
 step-sequencer = { path = "../step-sequencer", features = ["coreaudio"] }
+
+[features]
+precise_timing = []

@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod beatmaker;
+pub mod command;
 pub mod consts;
 pub mod drum_track;
 pub mod error;
@@ -9,5 +10,6 @@ pub mod midi;
 pub mod models;
 pub mod project;
 pub mod timeline;
+mod util;
 
 pub use error::SSResult;

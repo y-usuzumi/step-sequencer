@@ -28,7 +28,7 @@ enum InternalSignal {
 pub enum BeatMakerEvent {
     Pause,                        // Timeline pause
     Stop,                         // Timeline reset
-    CompleteTick(u64),            // Passthru of timeline ticks
+    Tick(u64),                    // Passthru of timeline ticks
     Step(u64),                    // Global steps elapsed
     Beat(BeatTime),               // Track beat
     MIDIEvent(ChannelVoiceEvent), // MIDI event to be processed by audio server
@@ -80,6 +80,7 @@ impl BeatMaker {
                     recv(timeline_subscription.receiver) -> tick => {
                         match tick.unwrap() {
                             TimelineEvent::Tick(tick) => {
+                                BeatMakerSubscriptionModel::send_all(&subscriber_map, BeatMakerEvent::Tick(tick));
                                 let tempo = {
                                     let project_settings = project_settings.read().unwrap();
                                     *project_settings.current_beat_time.write().unwrap() = current_beat_time;

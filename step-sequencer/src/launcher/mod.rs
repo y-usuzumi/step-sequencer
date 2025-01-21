@@ -1,41 +1,20 @@
-use std::fmt;
-use std::{rc::Rc, sync::RwLockWriteGuard};
+pub mod launcher2;
+pub mod util;
+
+pub use launcher2::SSLauncher2;
 
 use log::{error, info};
+use util::get_track;
 
 use crate::{
     audio::{create_ss_client, SSClient},
     beatmaker::{BeatMaker, BeatMakerSubscription},
-    drum_track::DrumTrack,
+    command::Command,
     error::SSError,
-    midi::{note::Note, Channel, Velocity},
-    project::{Project, Tempo, TrackMap, F},
+    project::Project,
     timeline::Timeline,
     SSResult,
 };
-
-#[derive(Clone, Debug)]
-pub enum Command {
-    PlayOrPause,
-    Stop,
-    Quit,
-    ChangeTempo(Tempo),
-    AddTrack,
-    RenameTrack(usize, String),
-    ToggleBeat(usize, usize),
-    Resize(usize, usize),
-    TempoScale(usize, F),
-    SetChannel(usize, Channel),
-    SetVelocity(usize, Velocity),
-    SetNote(usize, Note),
-    Debug,
-}
-
-impl fmt::Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
 
 /// SSLauncher orchestrates the audio client, timeline, beatmaker.
 /// It handles the lifecycle of those components and estable communication
@@ -48,17 +27,6 @@ pub struct SSLauncher {
     beatmaker: BeatMaker,
     project: Project,
     ss_client: Box<dyn SSClient + Send>,
-}
-
-fn get_track<'a>(
-    track_map: &'a mut RwLockWriteGuard<TrackMap>,
-    track_idx: usize,
-) -> Option<&'a mut DrumTrack> {
-    let mut tracks = track_map.values_mut();
-    for _ in 0..track_idx {
-        tracks.next();
-    }
-    tracks.next()
 }
 
 impl SSLauncher {
