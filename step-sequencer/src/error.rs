@@ -10,6 +10,9 @@ pub enum SSError {
     #[cfg(feature = "coreaudio")]
     #[error("CoreAudio error: `{0}`")]
     CoreAudioError(#[from] coreaudio::Error),
+    #[cfg(feature = "coreaudio")]
+    #[error("CoreAudio sys error: `{0}")]
+    CoreAudioSysError(coreaudio::sys::OSStatus),
     #[cfg(feature = "jack")]
     #[error("JACK error: `{0}`")]
     JackError(#[from] jack::Error),
@@ -39,4 +42,11 @@ pub enum CommandError {
     ArgumentError(String, String),
     #[error("Command execution error: `{0}`")]
     CommandExecutionError(Command, String),
+}
+
+#[cfg(feature = "coreaudio")]
+impl From<coreaudio::sys::OSStatus> for SSError {
+    fn from(value: coreaudio::sys::OSStatus) -> Self {
+        SSError::CoreAudioSysError(value)
+    }
 }
