@@ -31,11 +31,11 @@ pub(crate) struct Tui<'a> {
     input_mode: InputMode,
     error: Option<SSError>,
     logs: Vec<String>,
-    ss_launcher: &'a mut SSLauncher,
+    ss_launcher: &'a mut dyn SSLauncher,
 }
 
 impl<'a> Tui<'a> {
-    pub fn new(ss_launcher: &'a mut SSLauncher) -> Self {
+    pub fn new(ss_launcher: &'a mut dyn SSLauncher) -> Self {
         Self {
             input: Input::default(),
             input_mode: InputMode::Normal,
@@ -93,7 +93,7 @@ impl<'a> Tui<'a> {
         &mut self,
         beatmaker_subscription: BeatMakerSubscription,
         log_receiver: Receiver<String>,
-        mut command_handler: impl FnMut(&mut SSLauncher, &str) -> SSResult<()>,
+        mut command_handler: impl FnMut(&mut dyn SSLauncher, &str) -> SSResult<()>,
     ) -> SSResult<()> {
         let mut terminal = ratatui::init();
         let (event_sender, event_receiver) = unbounded();
@@ -206,7 +206,7 @@ impl<'a> Tui<'a> {
 
     fn execute_command<F>(&mut self, command: &str, command_handler: &mut F)
     where
-        F: FnMut(&mut SSLauncher, &str) -> SSResult<()>,
+        F: FnMut(&mut dyn SSLauncher, &str) -> SSResult<()>,
     {
         match command_handler(self.ss_launcher, command) {
             Ok(()) => {

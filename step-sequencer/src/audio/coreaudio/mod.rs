@@ -26,8 +26,8 @@ impl Receivable for VirtualSource {
 
 pub struct CoreAudioMIDIAdapter {
     virtual_source: Arc<dyn Send + Sync + Receivable>,
-    buffer_size: usize,
     sample_rate: u64,
+    buffer_size: usize,
     nanosecs_on_play: u64,
     last_n_frames: usize,
 }
