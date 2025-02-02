@@ -15,7 +15,9 @@ use log::{debug, info};
 use crate::{
     consts,
     midi::ChannelVoiceEvent,
-    models::channel_subscription::{ChannelEventSubscription, ChannelEventSubscriptionModel},
+    models::channel_subscription::{
+        ChannelEventSubscriberMap, ChannelEventSubscription, ChannelEventSubscriptionModel,
+    },
     project::{Project, F},
     timeline::{TimelineEvent, TimelineSubscription},
 };
@@ -36,6 +38,7 @@ pub enum BeatMakerEvent {
 
 pub type BeatMakerSubscriptionModel = ChannelEventSubscriptionModel<BeatMakerEvent>;
 pub type BeatMakerSubscription = ChannelEventSubscription<BeatMakerEvent>;
+pub type BeatMakerSubscriberMap = ChannelEventSubscriberMap<BeatMakerEvent>;
 
 /// BeatMaker sends walks along the timeline and send out beats of every track
 /// as MIDI notes.

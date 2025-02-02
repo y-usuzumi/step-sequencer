@@ -17,7 +17,7 @@ enum ExecutorState {
 }
 
 pub(crate) struct ExecutorContext {
-    current_tick: Tick,
+    pub current_tick: Tick,
 }
 
 pub(crate) fn run_with_interval<F, State>(
@@ -40,7 +40,6 @@ where
     let cloned_current_context = current_context.clone();
     let cloned_start_mutex = start_mutex.clone();
     let cloned_state_condvar = state_condvar.clone();
-    println!("Spawning thread");
     let _ = thread::spawn(move || {
         let start_mutex = start_mutex.clone();
         let mut next_tick_time = Instant::now() + interval;
@@ -53,7 +52,6 @@ where
                         continue;
                     }
                     Terminated => {
-                        println!("Terminated");
                         state_condvar.notify_one();
                         return;
                     }
