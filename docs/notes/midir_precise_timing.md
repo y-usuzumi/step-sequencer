@@ -5,7 +5,11 @@ The following information is provided by Gemini 2.0 Flash. I questioned about th
 
 I also found this open issue: https://github.com/Boddlnagg/midir/issues/45 in which a similar question was raised.
 
-However, I tested using the `test_play.rs` example in the midir repo, and even with a buffer size of 2048 the notes match their expected play time pretty well. Maybe I need to decrease sample rate as well.
+Update 2025/02/26: My test today testifies to my finding. I tested using `sleep` of 266ms between two recurring notes, and I observed a pattern of notes with the duration of 256ms interspersed with notes with the duration of 299ms at every fourth or fifth note.
+
+I did not observe this in the previous test was because midir defaults the ALSA backend. To use the JACK backend, I need to specify `--features jack`.
+
+~~However, I tested using the `test_play.rs` example in the midir repo, and even with a buffer size of 2048 the notes match their expected play time pretty well. Maybe I need to decrease sample rate as well.~~
 
 ---
 
