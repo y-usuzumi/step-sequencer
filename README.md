@@ -8,7 +8,7 @@ A simple step sequencer that might one day evolve into a fully fledged DAW (Digi
 |--|--|--|--|
 |JACK|✅[^1]|✅|❌|
 |CoreAudio|🛑|🛑|✅|
-|ASIO|❌|🛑|🛑|
+|WinRT|❌|🛑|🛑|
 
 ✅: Supported
 ❌: Unsupported
