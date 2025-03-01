@@ -1,0 +1,10 @@
+[package]
+name = "step-sequencer-playground"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jack = { version = "0.13.0", optional = true }
+
+[features]
+jack = ["dep:jack"]
