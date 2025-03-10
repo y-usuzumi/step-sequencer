@@ -11,6 +11,8 @@ I did not observe this in the previous test was because midir defaults the ALSA 
 
 ~~However, I tested using the `test_play.rs` example in the midir repo, and even with a buffer size of 2048 the notes match their expected play time pretty well. Maybe I need to decrease sample rate as well.~~
 
+Update 2025/03/10: It turns out that even the original C++ library [RtMidi](https://github.com/thestk/rtmidi) which this repo is based off of has the exact same issue. The code does look similar after all, although I don't really know C++. Similarly, the ALSA implementation in RtMidi also works perfectly.
+
 ---
 
 You've hit upon a critical point regarding real-time audio and MIDI processing in JACK, and your concerns about std::thread::sleep are absolutely valid.
