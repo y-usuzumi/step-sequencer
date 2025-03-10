@@ -1,5 +1,4 @@
 use std::{
-    rc::Rc,
     sync::{Arc, Condvar, Mutex},
     thread,
 };
@@ -9,8 +8,7 @@ use log::{debug, error, info};
 
 use crate::{
     audio::SSClient,
-    beatmaker::{BeatMaker, BeatMakerSubscription},
-    midi::ChannelVoiceEvent,
+    beatmaker::BeatMakerSubscription,
     SSResult,
 };
 
@@ -172,47 +170,7 @@ fn process_sine_wave(
         let y = x.sin();
         *v = y as f32;
     }
-}
-
-fn process_midi(
-    state: &mut TestState,
-    client: &jack::Client,
-    port: &mut jack::Port<jack::MidiOut>,
-    process_scope: &jack::ProcessScope,
-) -> SSResult<()> {
-    let frame_time = process_scope.last_frame_time();
-    let frames = process_scope.n_frames();
-    let sample_rate = client.sample_rate() as u32;
-    info!("Sample rate: {:?}", sample_rate);
-    let mut midi_writer = port.writer(process_scope);
-    let seconds = (frame_time + frames) / sample_rate;
-    if seconds > state.last_event_midi_seconds {
-        debug!("Frame time: {:?}, frames: {:?}", frame_time, frames);
-        debug!("Seconds: {:?}", seconds);
-        let message = if seconds % 2 != 0 {
-            ChannelVoiceEvent::NoteOn {
-                channel: 0,
-                key: 64,
-                velocity: 64,
-            }
-        } else {
-            ChannelVoiceEvent::NoteOff {
-                channel: 0,
-                key: 64,
-                velocity: 64,
-            }
-        };
-        let data = message.to_data()?;
-        debug!("MIDI data: {:?}", data);
-        let raw_midi = RawMidi {
-            time: 1,
-            bytes: &data,
-        };
-        midi_writer.write(&raw_midi)?;
-    }
-
-    Ok(())
-}
+}   
 
 fn process_beatmaker(
     subscription: &BeatMakerSubscription,

@@ -1,7 +1,7 @@
 use std::{io, num::ParseIntError};
 use thiserror::Error;
 
-use crate::{launcher::Command, midi::note::ParseNoteError};
+use crate::{command::Command, midi::note::ParseNoteError};
 
 pub type SSResult<T> = std::result::Result<T, SSError>;
 

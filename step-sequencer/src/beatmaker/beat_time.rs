@@ -23,6 +23,10 @@ impl BeatTime {
         usize::try_from(self.frac.trunc()).unwrap() as usize
     }
 
+    pub fn f(&self) -> F {
+        self.frac
+    }
+
     pub fn fraction(&self) -> F {
         self.frac.fract()
     }

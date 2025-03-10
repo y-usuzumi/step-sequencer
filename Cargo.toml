@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "playground",
     "step-sequencer",
     "step-sequencer-tui",
     "step-sequencer-gui/src-tauri",

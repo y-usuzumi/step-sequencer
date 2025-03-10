@@ -4276,6 +4276,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "step-sequencer-playground"
+version = "0.1.0"
+dependencies = [
+ "jack",
+]
+
+[[package]]
 name = "step-sequencer-tui"
 version = "0.1.0"
 dependencies = [
