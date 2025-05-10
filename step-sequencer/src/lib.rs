@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod beatmaker;
+pub mod command;
 pub mod consts;
 pub mod drum_track;
 pub mod error;

@@ -5,17 +5,17 @@ use step_sequencer::{
         pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
         BeatMakerEvent, BeatMakerSubscription,
     },
-    launcher::SSLauncher,
+    launcher::{SSLauncher, SSLauncherImpl2},
     SSResult,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 
-pub(crate) struct AppState {
-    ss_launcher: SSLauncher,
+pub(crate) struct AppState<L> {
+    ss_launcher: L,
 }
 
-fn create_step_sequencer() -> SSResult<SSLauncher> {
-    let ss_launcher = SSLauncher::new();
+fn create_step_sequencer() -> SSResult<impl SSLauncher> {
+    let ss_launcher = SSLauncherImpl2::new();
     let project = ss_launcher.project();
     let example_drumtracks = if cfg!(target_os = "linux") {
         &EXAMPLE_DRUMTRACKS_BITWIG
@@ -35,25 +35,25 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn play(state: State<Mutex<AppState>>) -> String {
-    state.lock().unwrap().ss_launcher.timeline().start();
+fn play(state: State<Mutex<AppState<Box<dyn SSLauncher>>>>) -> String {
+    state.lock().unwrap().ss_launcher.start();
     format!("Playing")
 }
 
 #[tauri::command]
-fn pause(state: State<Mutex<AppState>>) -> String {
-    state.lock().unwrap().ss_launcher.timeline().pause();
+fn pause(state: State<Mutex<AppState<Box<dyn SSLauncher>>>>) -> String {
+    state.lock().unwrap().ss_launcher.pause();
     format!("Paused")
 }
 
 #[tauri::command]
-fn stop(state: State<Mutex<AppState>>) -> String {
-    state.lock().unwrap().ss_launcher.timeline().stop();
+fn stop(state: State<Mutex<AppState<Box<dyn SSLauncher>>>>) -> String {
+    state.lock().unwrap().ss_launcher.stop();
     format!("Stopped")
 }
 
 #[tauri::command]
-fn get_tempo(state: State<Mutex<AppState>>) -> u16 {
+fn get_tempo(state: State<Mutex<AppState<Box<dyn SSLauncher>>>>) -> u16 {
     state
         .lock()
         .unwrap()
@@ -93,8 +93,10 @@ pub fn run() {
             greet, play, pause, stop, get_tempo
         ])
         .setup(|app| {
-            let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();
-            app.manage(Mutex::new(AppState { ss_launcher }));
+            let beatmaker_event_subscription = ss_launcher.subscribe_to_beats();
+            app.manage(Mutex::new(AppState {
+                ss_launcher: Box::new(ss_launcher),
+            }));
             run_beatmaker_event_handler(app.handle().clone(), beatmaker_event_subscription);
             Ok(())
         })
