@@ -267,7 +267,12 @@ impl<'a> Tui<'a> {
 
     fn render_help_popup(&self, frame: &mut Frame, area: Rect) {
         let help_msg = r#"
-TODO
+            :q      Quit
+            :       Command Palette
+            ?       Help
+            +       Add track
+            Space   Play/Pause
+            Esc     Stop
         "#;
         let popup = Popup::new(help_msg);
         frame.render_widget(popup, area);
