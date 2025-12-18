@@ -2,6 +2,8 @@
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
+import TrackerView from './TrackerView.vue'
+import MainControl from "./MainControl.vue";
 
 type Sign = "Plus" | "Minus";
 
@@ -77,50 +79,60 @@ onMounted(async () => {
         current_beat.value = `${sign === 'Plus' ? '' : '-'}${numer}/${denom}`;
       }
     }
-});
+  });
 });
 
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+    <el-container>
+      <el-header>
+        <h1>Welcome to Step-Sequencer</h1>
+      </el-header>
 
-    <div class="row">
-      <a href="https://vitejs.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Current tempo: {{ tempo }}</p>
-    <p>Current beat: {{  current_beat }}</p>
+      <el-container>
+        <el-container>
+          <el-main>
 
-    <form class="row" @submit.prevent="true">
-      <button @click="play" v-if="status != 'playing'">▶️</button>
-      <button @click="pause" v-if="status == 'playing'">⏸️</button>
-      <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
-    </form>
-    <p>{{ greetMsg }}</p>
+            <el-space :size="20" direction="vertical" fill>
+              <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
+                @stop="stop()" />
+              <el-row :gutter="0" type="flex">
+                <el-col>
+                  <TrackerView :current_beat="current_beat" />
+                </el-col>
+              </el-row>
+              <!-- <div class="tracker-view">
+              </div> -->
+              <form class="row" @submit.prevent="true">
+                <button @click="play" v-if="status != 'playing'">▶️</button>
+                <button @click="pause" v-if="status == 'playing'">⏸️</button>
+                <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
+              </form>
+              <p>{{ greetMsg }}</p>
+            </el-space>
+          </el-main>
+          <el-footer>
+            <el-row :gutter="10" justify="end" align="middle">
+              <a href="https://github.com/y-usuzumi/step-sequencer">@ Github</a>
+
+            </el-row>
+          </el-footer>
+        </el-container>
+      </el-container>
+    </el-container>
   </main>
+  <!-- <main class="container">
+
+  </main> -->
 </template>
 
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-</style>
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  color: darkslategray;
+  /* background-color: mintcream; */
+  /* font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
@@ -132,32 +144,34 @@ onMounted(async () => {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%; */
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+#app {
+  height: 100%;
 }
 
 .container {
+  width: 100%;
+  height: 100%;
   margin: 0;
-  padding-top: 10vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   text-align: center;
-}
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
 }
 
 .row {
-  display: flex;
-  justify-content: center;
+  /* display: flex;
+  justify-content: center; */
 }
 
 a {
@@ -172,20 +186,6 @@ a:hover {
 
 h1 {
   text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 }
 
 button {

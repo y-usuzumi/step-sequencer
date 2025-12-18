@@ -3,6 +3,8 @@ import vue from "@vitejs/plugin-vue";
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import svgLoader from 'vite-svg-loader';
+
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -17,6 +19,7 @@ export default defineConfig(async () => ({
     Components({
       resolvers: [ElementPlusResolver()],
     }),
+    svgLoader()
   ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
