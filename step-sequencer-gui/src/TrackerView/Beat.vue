@@ -1,6 +1,7 @@
 <script setup>
 import { id } from 'element-plus/es/locales.mjs';
 import { ref, defineProps, defineEmits, computed, onMounted, watch } from 'vue';
+import '../assets/track.css'
 const props = defineProps(['id', 'value', 'isToggled', 'note']);
 const emit = defineEmits(['update:isToggled', 'update:note']);
 const computed_isToggled = computed({
@@ -23,7 +24,8 @@ const note = ref('C1');
 
 </script>
 <template>
-    <el-checkbox-button type="primary" :value="value" v-model="computed_isToggled">{{ note }}</el-checkbox-button>
+    <el-checkbox-button class="beat" type="primary" :value="value" v-model="computed_isToggled">{{ note
+    }}</el-checkbox-button>
     <!-- <div class="main-beat" :class="{ 'toggled': isToggled }" @click.prevent="onClick">
         {{ note }}
     </div> -->

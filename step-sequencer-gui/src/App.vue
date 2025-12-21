@@ -2,8 +2,8 @@
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
-import TrackerView from './TrackerView.vue'
-import MainControl from "./MainControl.vue";
+import TrackerView from './TrackerView/TrackerView.vue'
+import MainControl from "./MainPanel/MainControl.vue";
 
 type Sign = "Plus" | "Minus";
 
@@ -85,47 +85,39 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="container">
+  <el-container class="container">
+    <el-header>
+      <h1>Welcome to Step-Sequencer</h1>
+    </el-header>
+
     <el-container>
-      <el-header>
-        <h1>Welcome to Step-Sequencer</h1>
-      </el-header>
-
-      <el-container>
-        <el-container>
-          <el-main>
-
-            <el-space :size="20" direction="vertical" fill>
-              <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
-                @stop="stop()" />
-              <el-row :gutter="0" type="flex">
-                <el-col>
-                  <TrackerView :current_beat="current_beat" />
-                </el-col>
-              </el-row>
-              <!-- <div class="tracker-view">
+      <el-main>
+        <el-space :size="20" direction="vertical" fill>
+          <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
+            @stop="stop()" />
+          <el-row :gutter="0" type="flex">
+            <el-col>
+              <TrackerView :current_beat="current_beat" />
+            </el-col>
+          </el-row>
+          <!-- <div class="tracker-view">
               </div> -->
-              <form class="row" @submit.prevent="true">
-                <button @click="play" v-if="status != 'playing'">▶️</button>
-                <button @click="pause" v-if="status == 'playing'">⏸️</button>
-                <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
-              </form>
-              <p>{{ greetMsg }}</p>
-            </el-space>
-          </el-main>
-          <el-footer>
-            <el-row :gutter="10" justify="end" align="middle">
-              <a href="https://github.com/y-usuzumi/step-sequencer">@ Github</a>
+          <form class="row" @submit.prevent="true">
+            <button @click="play" v-if="status != 'playing'">▶️</button>
+            <button @click="pause" v-if="status == 'playing'">⏸️</button>
+            <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
+          </form>
+          <p>{{ greetMsg }}</p>
+        </el-space>
+      </el-main>
+      <el-footer>
+        <el-row :gutter="10" justify="end" align="middle">
+          <a href="https://github.com/y-usuzumi/step-sequencer">@ Github</a>
 
-            </el-row>
-          </el-footer>
-        </el-container>
-      </el-container>
+        </el-row>
+      </el-footer>
     </el-container>
-  </main>
-  <!-- <main class="container">
-
-  </main> -->
+  </el-container>
 </template>
 
 <style>
@@ -152,10 +144,12 @@ body {
   width: 100%;
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 #app {
   height: 100%;
+  overflow: hidden;
 }
 
 .container {
