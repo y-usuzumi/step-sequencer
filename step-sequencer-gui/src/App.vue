@@ -90,33 +90,24 @@ onMounted(async () => {
       <h1>Welcome to Step-Sequencer</h1>
     </el-header>
 
-    <el-container>
-      <el-main>
-        <el-space :size="20" direction="vertical" fill>
-          <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
-            @stop="stop()" />
-          <el-row :gutter="0" type="flex">
-            <el-col>
-              <TrackerView :current_beat="current_beat" />
-            </el-col>
-          </el-row>
-          <!-- <div class="tracker-view">
+    <el-main>
+      <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
+        @stop="stop()" />
+      <TrackerView :current_beat="current_beat" />
+      <!-- <div class="tracker-view">
               </div> -->
-          <form class="row" @submit.prevent="true">
-            <button @click="play" v-if="status != 'playing'">▶️</button>
-            <button @click="pause" v-if="status == 'playing'">⏸️</button>
-            <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
-          </form>
-          <p>{{ greetMsg }}</p>
-        </el-space>
-      </el-main>
-      <el-footer>
-        <el-row :gutter="10" justify="end" align="middle">
-          <a href="https://github.com/y-usuzumi/step-sequencer">@ Github</a>
-
-        </el-row>
-      </el-footer>
-    </el-container>
+      <form class="row" @submit.prevent="true">
+        <button @click="play" v-if="status != 'playing'">▶️</button>
+        <button @click="pause" v-if="status == 'playing'">⏸️</button>
+        <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
+      </form>
+      <p>{{ greetMsg }}</p>
+    </el-main>
+    <el-footer>
+      <el-row :gutter="10" justify="end" align="middle">
+        <a href="https://github.com/y-usuzumi/step-sequencer">@ Github</a>
+      </el-row>
+    </el-footer>
   </el-container>
 </template>
 

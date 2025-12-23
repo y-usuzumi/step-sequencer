@@ -17,6 +17,8 @@ const computed_current_beat = computed({
     }
 });
 
+const tracklist = ref([...Array(20).keys()].map(i => i + 1));
+
 function intBeat(current_beat) {
     const parts = current_beat.split('/');
     if (parts.length === 2) {
@@ -32,11 +34,13 @@ function intBeat(current_beat) {
 </script>
 
 <template>
-    <el-card shadow="never" body-style="padding: 0;">
-        <el-scrollbar height="25rem" view-style="padding: 0.6rem;">
-            <el-container>
-                <el-aside width="fit-content" class="no-overflow simple-flex-track">
-                    <el-container>
+    <el-card shadow="never" body-style="padding: 0;" style="margin: 2rem;">
+        <!-- <el-scrollbar height="25rem" view-style="height: 100%"> -->
+        <el-container style="height: 100%; padding: 0.6rem;">
+            <!-- <el-splitter width="fit-content" class="no-overflow simple-flex-track"> -->
+            <el-scrollbar style="height:25rem; padding: 0.6rem;">
+                <el-splitter>
+                    <el-splitter-panel size="10%" collapsible class="no-overflow simple-flex-track">
                         <link rel="preconnect" href="https://fonts.googleapis.com">
                         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                         <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
@@ -44,42 +48,38 @@ function intBeat(current_beat) {
                         <el-text style="font-family: 'Oswald'; font-size: 1rem;">
                             Current beat:
                         </el-text>
-                    </el-container>
-                    <el-row :gutter="10" v-for="i in 6">
-                        <el-checkbox-button type="primary" circle>M</el-checkbox-button>
-                        <el-checkbox-button type="primary" circle>S</el-checkbox-button>
-                    </el-row>
-                </el-aside>
-                <el-container>
-                    <el-scrollbar>
-                        <el-main class="simple-flex-track">
+                        <el-row :gutter="10" v-for="i in tracklist">
+                            <el-checkbox-button type="primary" circle>M</el-checkbox-button>
+                            <el-checkbox-button type="primary" circle>S</el-checkbox-button>
+                        </el-row>
+                    </el-splitter-panel>
+                    <el-splitter-panel size="90%">
+                        <el-scrollbar height="fit-content" view-class="simple-flex-track">
                             <!-- timeline -->
                             <el-radio-group size="default" v-model="computed_current_beat" class="beats-start beat">
                                 <el-radio-button type="primary" v-for="i in 20" :value="i">{{
                                     i
-                                    }}</el-radio-button>
+                                }}</el-radio-button>
                             </el-radio-group>
                             <!-- main tracks -->
-                            <Track v-for="i in 6" :current_beat="computed_current_beat" />
-                        </el-main>
-                    </el-scrollbar>
-                </el-container>
-            </el-container>
-            <el-space :size="20" direction="vertical">
+                            <Track v-for="i in tracklist" :current_beat="computed_current_beat" />
+                        </el-scrollbar>
+                    </el-splitter-panel>
+                </el-splitter>
+            </el-scrollbar>
+
+        </el-container>
+        <el-space :size="20" direction="vertical">
 
 
-            </el-space>
-        </el-scrollbar>
+        </el-space>
+        <!-- </el-scrollbar> -->
     </el-card>
     <!-- <div class="main-tracker-view" @click.prevent="">
     </div> -->
 </template>
 
 <style scoped>
-.no-overflow {
-    overflow: hidden;
-}
-
 .root {
     font-family: Arial;
 
