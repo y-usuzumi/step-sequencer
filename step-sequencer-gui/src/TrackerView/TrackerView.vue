@@ -38,7 +38,7 @@ function intBeat(current_beat) {
         <!-- <el-scrollbar height="25rem" view-style="height: 100%"> -->
         <el-container style="height: 100%; padding: 0.6rem;">
             <!-- <el-splitter width="fit-content" class="no-overflow simple-flex-track"> -->
-            <el-scrollbar style="height:25rem; padding: 0.6rem;">
+            <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%">
                 <el-splitter>
                     <el-splitter-panel size="10%" collapsible class="no-overflow simple-flex-track">
                         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +46,7 @@ function intBeat(current_beat) {
                         <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
                             rel="stylesheet">
                         <el-text style="font-family: 'Oswald'; font-size: 1rem;">
-                            Current beat:
+                            Timeline:
                         </el-text>
                         <el-row :gutter="10" v-for="i in tracklist">
                             <el-checkbox-button type="primary" circle>M</el-checkbox-button>

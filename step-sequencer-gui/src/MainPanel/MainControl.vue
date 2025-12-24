@@ -4,8 +4,10 @@ import PlayArrowIcon from '@material-design-icons/svg/outlined/play_arrow.svg'
 import PauseIcon from '@material-design-icons/svg/outlined/pause.svg'
 import StopIcon from '@material-design-icons/svg/outlined/stop.svg'
 
-const props = defineProps(['status', 'tempo', 'current_beat', 'play', 'pause', 'stop']);
+const props = defineProps(['status', 'current_beat', 'play', 'pause', 'stop']);
 const emits = defineEmits(['update:status', 'update:current_beat', 'update:tempo']);
+
+const tempo = defineModel('tempo');
 
 const computed_status = computed({
     // Getter: 读取时，直接返回 props 的值
@@ -86,10 +88,10 @@ onMounted(() => {
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-            <el-space :size="20">
+            <el-space :size="30">
                 <el-text style="font-family: 'Oswald'; font-size: 20px;">
 
-                    Current tempo:
+                    Tempo:
                     <el-input-number v-model="computed_tempo" :step="1">
                         <template #suffix>
                             <span>Bps</span>

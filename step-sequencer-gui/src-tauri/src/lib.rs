@@ -65,6 +65,21 @@ fn get_tempo(state: State<Mutex<AppState>>) -> u16 {
         .tempo
 }
 
+#[tauri::command]
+fn set_tempo(state: State<Mutex<AppState>>, tempo: u16) -> String {
+    print!("{}", tempo);
+    state
+        .lock()
+        .unwrap()
+        .ss_launcher
+        .project()
+        .project_settings()
+        .write()
+        .unwrap()
+        .tempo = tempo;
+    format!("set tempo to {}", tempo)
+}
+
 fn run_beatmaker_event_handler(
     app_handle: AppHandle,
     beatmaker_subscription: BeatMakerSubscription,
@@ -90,7 +105,7 @@ pub fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            greet, play, pause, stop, get_tempo
+            greet, play, pause, stop, get_tempo, set_tempo
         ])
         .setup(|app| {
             let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();

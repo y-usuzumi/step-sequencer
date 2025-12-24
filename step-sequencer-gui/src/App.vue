@@ -62,6 +62,15 @@ async function init() {
   await get_tempo();
 }
 
+async function set_tempo(new_tempo: number) {
+  console.log("set_tempo", new_tempo);
+  if (new_tempo > 0 && new_tempo <= 240) {
+    let response = await invoke("set_tempo", { tempo: new_tempo });
+    console.log(response);
+  }
+  get_tempo();
+}
+
 onMounted(async () => {
   await init();
   listen<BeatSignal>('beat-signal', (event) => {
@@ -92,7 +101,7 @@ onMounted(async () => {
 
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
-        @stop="stop()" />
+        @stop="stop()" @update:tempo="set_tempo" />
       <TrackerView :current_beat="current_beat" />
       <!-- <div class="tracker-view">
               </div> -->
