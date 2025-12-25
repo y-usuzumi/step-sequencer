@@ -31,49 +31,60 @@ function intBeat(current_beat) {
         return NaN;
     }
 }
+
+const onScroll = (e) => {
+    console.log(e);
+    let controlPanel = document.getElementById("control-panel");
+    controlPanel.style.top = -e.scrollTop + "px";
+}
 </script>
 
 <template>
     <el-card shadow="never" body-style="padding: 0;" style="margin: 2rem;">
-        <!-- <el-scrollbar height="25rem" view-style="height: 100%"> -->
-        <el-container style="height: 100%; padding: 0.6rem;">
-            <!-- <el-splitter width="fit-content" class="no-overflow simple-flex-track"> -->
-            <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%">
-                <el-splitter>
-                    <el-splitter-panel size="10%" collapsible class="no-overflow simple-flex-track">
-                        <link rel="preconnect" href="https://fonts.googleapis.com">
-                        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
-                            rel="stylesheet">
-                        <el-text style="font-family: 'Oswald'; font-size: 1rem;">
+        <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
+        <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
+        <el-splitter>
+            <el-splitter-panel :size="20" collapsible class="no-overflow"
+                style="overflow:hidden; width: 100%; height:25rem;">
+                <!-- control panel -->
+                <el-container id="control-panel" class="no-overflow simple-flex-center"
+                    style="overflow:hidden;position: relative;">
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
+                        rel="stylesheet">
+                    <!-- <el-text style="font-family: 'Oswald'; font-size: 1rem; position:sticky; top:0;">
                             Timeline:
-                        </el-text>
-                        <el-row :gutter="10" v-for="i in tracklist">
-                            <el-checkbox-button type="primary" circle>M</el-checkbox-button>
-                            <el-checkbox-button type="primary" circle>S</el-checkbox-button>
-                        </el-row>
-                    </el-splitter-panel>
-                    <el-splitter-panel size="90%">
-                        <el-scrollbar height="fit-content" view-class="simple-flex-track">
-                            <!-- timeline -->
-                            <el-radio-group size="default" v-model="computed_current_beat" class="beats-start beat">
-                                <el-radio-button type="primary" v-for="i in 20" :value="i">{{
-                                    i
-                                }}</el-radio-button>
-                            </el-radio-group>
-                            <!-- main tracks -->
-                            <Track v-for="i in tracklist" :current_beat="computed_current_beat" />
-                        </el-scrollbar>
-                    </el-splitter-panel>
-                </el-splitter>
-            </el-scrollbar>
+                        </el-text> -->
+                    <el-button type="" style="visibility: hidden;"></el-button> <!-- spacer -->
+                    <el-row :gutter="10" v-for="i in tracklist" style="flex-wrap: nowrap">
+                        <el-checkbox-button type="primary" circle>M</el-checkbox-button>
+                        <el-checkbox-button type="primary" circle>S</el-checkbox-button>
+                    </el-row>
+                </el-container>
+            </el-splitter-panel>
+            <el-splitter-panel :size="90">
+                <el-scrollbar height="25rem" wrap-style="100%" view-class="no-overflow simple-flex-start"
+                    @scroll="onScroll">
+                    <!-- timeline -->
+                    <el-radio-group size="default" v-model="computed_current_beat" class="beats-start beat"
+                        style="position: sticky; top:0;">
+                        <el-radio-button type="primary" v-for="i in 20" :value="i">{{
+                            i
+                        }}</el-radio-button>
+                    </el-radio-group>
+                    <!-- main tracks -->
+                    <Track v-for="i in tracklist" :current_beat="computed_current_beat" />
+                </el-scrollbar>
+            </el-splitter-panel>
+        </el-splitter>
+        <!-- </el-scrollbar> -->
 
-        </el-container>
+        <!-- </el-container> -->
         <el-space :size="20" direction="vertical">
 
 
         </el-space>
-        <!-- </el-scrollbar> -->
     </el-card>
     <!-- <div class="main-tracker-view" @click.prevent="">
     </div> -->

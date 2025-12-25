@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import Beat from './Beat.vue';
+import '../assets/track.css'
 
 const props = defineProps(['current_beat']);
 
@@ -25,11 +26,11 @@ watch(() => props.current_beat, (newVal, oldVal) => {
 
 
 <template>
-    <el-space :size="10">
-        <!-- <el-checkbox-group v-model="computed_current_beat"> -->
+    <!-- <el-space size="0.5rem"> -->
+    <el-radio-group v-model="computed_current_beat" class="beats-start">
         <Beat :isToggled="i === current_beat" :key="i" :value="i" :note="i" v-for="i in 20" />
-        <!-- </el-checkbox-group> -->
-    </el-space>
+    </el-radio-group>
+    <!-- </el-space> -->
     <!-- <div class="main-track" @click.prevent="">
         <div >
         </div>

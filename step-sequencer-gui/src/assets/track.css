@@ -1,8 +1,9 @@
 .beatel-checkbox-button__inner,
-.beat .el-radio-button__inner {
+.beat .el-radio-button__inner,
+.beat .el-checkbox-button__inner {
     border-radius: var(--el-border-radius-base) !important;
-    width: 3rem !important;
-    height: 2rem !important;
+    width: 2.8rem !important;
+    height: 1.9rem !important;
 }
 
 .beats-start {
@@ -14,12 +15,27 @@
 }
 
 .no-overflow {
-    overflow: hidden;
+    overflow: none;
 }
 
-.simple-flex-track {
+.auto-overflow {
+    overflow: auto;
+}
+
+.simple-flex-center {
     width: fit-content;
-    height: max-content;
+    /* height: max-content; */
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+.simple-flex-start {
+    width: fit-content;
+    /* height: max-content; */
     padding: 1rem;
     display: flex;
     flex-direction: column;
