@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Track from './Track.vue';
 import '../assets/track.css'
 
@@ -9,7 +9,7 @@ const count = ref(2)
 const computed_current_beat = computed({
     // Getter: 读取时，直接返回 props 的值
     get() {
-        return intBeat(props.current_beat) ? intBeat(props.current_beat) : 1;
+        return intBeat(props.current_beat) ? intBeat(props.current_beat) % total_beats_num.value : 1;
     },
     // Setter: 写入时 (用户拖动滑块)，触发 emit 通知父组件
     set(new_current_beat) {
@@ -20,9 +20,12 @@ const computed_current_beat = computed({
 // const tracklist = ref([...Array(20).keys()].map(i => i + 1));
 
 const total_beats_num = computed(() => {
-    if (!props.tracks || !Array.isArray(props.tracks)) return 0;
+    if (!props.tracks || !Array.isArray(props.tracks)) return 16;
     let t = 16;
     for (const track of props.tracks) {
+        if (track[1].beats.length > t) {
+            t = track[1].beats.length;
+        }
     }
     return t;
 });
@@ -45,6 +48,14 @@ const onScroll = (e) => {
     let controlPanel = document.getElementById("control-panel");
     controlPanel.style.top = -e.scrollTop + "px";
 }
+
+const refTrackPanel = ref(null);
+
+watch(() => computed_current_beat.value, () => {
+    // console.log('current_beat changed')
+    // console.log(refTrackPanel)
+    refTrackPanel.value.setScrollLeft((computed_current_beat.value - 3) * 50)
+})
 </script>
 
 <template>
@@ -90,8 +101,8 @@ const onScroll = (e) => {
                 </el-container>
             </el-splitter-panel>
             <el-splitter-panel :size="90">
-                <el-scrollbar height="25rem" wrap-style="100%" view-class="no-overflow simple-flex-start"
-                    @scroll="onScroll">
+                <el-scrollbar ref="refTrackPanel" height="25rem" wrap-style="100%"
+                    view-class="no-overflow simple-flex-start" @scroll="onScroll">
                     <!-- timeline -->
                     <el-radio-group size="default" v-model="computed_current_beat" class="beats-start beat"
                         style="position: sticky; top:0;">
