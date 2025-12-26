@@ -1,13 +1,14 @@
 use std::{path::Display, str::FromStr, sync::LazyLock};
 
 use regex::Regex;
+use serde::Serialize;
 use thiserror::Error;
 
 use self::PitchClass::*;
 
 use super::Key;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize)]
 pub enum PitchClass {
     C,
     Cs,
@@ -75,7 +76,7 @@ impl Into<i8> for PitchClass {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize)]
 pub struct Note {
     pitch_class: PitchClass,
     octave: i8,

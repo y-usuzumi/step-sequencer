@@ -1,10 +1,11 @@
-use std::{sync::Mutex, thread};
+use std::{array, sync::Mutex, thread};
 
 use step_sequencer::{
     beatmaker::{
         pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
         BeatMakerEvent, BeatMakerSubscription,
     },
+    drum_track::DrumTrack,
     launcher::SSLauncher,
     SSResult,
 };
@@ -80,6 +81,21 @@ fn set_tempo(state: State<Mutex<AppState>>, tempo: u16) -> String {
     format!("set tempo to {}", tempo)
 }
 
+#[tauri::command]
+fn get_track_list(state: State<Mutex<AppState>>) -> Vec<(String, DrumTrack)> {
+    state
+        .lock()
+        .unwrap()
+        .ss_launcher
+        .project()
+        .tracks()
+        .read()
+        .unwrap()
+        .iter()
+        .map(|(id, track)| (id.to_string(), track.clone()))
+        .collect()
+}
+
 fn run_beatmaker_event_handler(
     app_handle: AppHandle,
     beatmaker_subscription: BeatMakerSubscription,
@@ -105,7 +121,13 @@ pub fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            greet, play, pause, stop, get_tempo, set_tempo
+            greet,
+            play,
+            pause,
+            stop,
+            get_tempo,
+            set_tempo,
+            get_track_list
         ])
         .setup(|app| {
             let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();

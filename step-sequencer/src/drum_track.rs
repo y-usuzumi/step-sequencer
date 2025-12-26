@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use self::DrumTrackBeat::*;
 use crate::{
     consts,
@@ -7,7 +9,7 @@ use crate::{
 
 use crate::project::F;
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Serialize)]
 pub enum DrumTrackBeat {
     Unset,
     DefaultBeat,
@@ -18,6 +20,7 @@ pub enum DrumTrackBeat {
 /// Each track contains a series of beats (can be empty)
 /// and a tempo scale which is respected by BeatMaker
 /// to stretch its own tempo in relation to the global tempo.
+#[derive(Clone, Debug, Serialize)]
 pub struct DrumTrack {
     name: String,
     tempo_scale: TempoScale,
@@ -25,7 +28,7 @@ pub struct DrumTrack {
     beats: Vec<DrumTrackBeat>,
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize)]
 pub struct Beat {
     pub channel: Channel,
     pub note: Note,

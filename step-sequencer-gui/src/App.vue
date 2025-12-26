@@ -60,6 +60,7 @@ async function get_tempo() {
 
 async function init() {
   await get_tempo();
+  await get_track_list();
 }
 
 async function set_tempo(new_tempo: number) {
@@ -69,6 +70,11 @@ async function set_tempo(new_tempo: number) {
     console.log(response);
   }
   get_tempo();
+}
+
+async function get_track_list() {
+  let list = await invoke("get_track_list");
+  console.log(list);
 }
 
 onMounted(async () => {
