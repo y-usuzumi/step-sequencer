@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import Track from './Track.vue';
 import '../assets/track.css'
 
-const props = defineProps(['current_beat']);
+const props = defineProps(['current_beat', 'tracks']);
 
 const count = ref(2)
 const computed_current_beat = computed({
@@ -17,7 +17,15 @@ const computed_current_beat = computed({
     }
 });
 
-const tracklist = ref([...Array(20).keys()].map(i => i + 1));
+// const tracklist = ref([...Array(20).keys()].map(i => i + 1));
+
+const total_beats_num = computed(() => {
+    if (!props.tracks || !Array.isArray(props.tracks)) return 0;
+    let t = 16;
+    for (const track of props.tracks) {
+    }
+    return t;
+});
 
 function intBeat(current_beat) {
     const parts = current_beat.split('/');
@@ -33,7 +41,7 @@ function intBeat(current_beat) {
 }
 
 const onScroll = (e) => {
-    console.log(e);
+    // console.log(e);
     let controlPanel = document.getElementById("control-panel");
     controlPanel.style.top = -e.scrollTop + "px";
 }
@@ -44,6 +52,16 @@ const onScroll = (e) => {
         <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
         <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
         <el-splitter>
+            <el-splitter-panel :size="20" collapsible class="no-overflow"
+                style="overflow:hidden; width: 100%; height:25rem;">
+                <el-row :gutter="10" v-for="[id, track] in tracks" style="width: calc();flex-wrap: nowrap">
+                    <el-col>
+                        <el-text type="info"
+                            style="display: inline-block; text-wrap: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Oswald'; font-size: 1rem;">{{
+                                track.name }}</el-text>
+                    </el-col>
+                </el-row>
+            </el-splitter-panel>
             <el-splitter-panel :size="20" collapsible class="no-overflow"
                 style="overflow:hidden; width: 100%; height:25rem;">
                 <!-- control panel -->
@@ -57,9 +75,17 @@ const onScroll = (e) => {
                             Timeline:
                         </el-text> -->
                     <el-button type="" style="visibility: hidden;"></el-button> <!-- spacer -->
-                    <el-row :gutter="10" v-for="i in tracklist" style="flex-wrap: nowrap">
-                        <el-checkbox-button type="primary" circle>M</el-checkbox-button>
-                        <el-checkbox-button type="primary" circle>S</el-checkbox-button>
+                    <el-row :gutter="10" v-for="[id, track] in tracks" style="width: calc();flex-wrap: nowrap">
+                        <!-- <el-col>
+
+                            <el-text type="info"
+                                style="display: inline-block; text-wrap: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Oswald'; font-size: 1rem;">{{
+                                    track.name }}</el-text>
+                        </el-col> -->
+                        <el-col>
+                            <el-checkbox-button type=" primary" circle>M</el-checkbox-button>
+                            <el-checkbox-button type="primary" circle>S</el-checkbox-button>
+                        </el-col>
                     </el-row>
                 </el-container>
             </el-splitter-panel>
@@ -69,12 +95,14 @@ const onScroll = (e) => {
                     <!-- timeline -->
                     <el-radio-group size="default" v-model="computed_current_beat" class="beats-start beat"
                         style="position: sticky; top:0;">
-                        <el-radio-button type="primary" v-for="i in 20" :value="i">{{
+                        <el-radio-button type="primary" v-for="i in total_beats_num" :value="i">{{
                             i
                         }}</el-radio-button>
                     </el-radio-group>
                     <!-- main tracks -->
-                    <Track v-for="i in tracklist" :current_beat="computed_current_beat" />
+                    <Track v-for="[id, track] in tracks" :id="id" :beats="track.beats"
+                        :default_beat="track.default_beat" :tempo_scale="track.tempo_scale"
+                        :current_beat="computed_current_beat" />
                 </el-scrollbar>
             </el-splitter-panel>
         </el-splitter>

@@ -3,8 +3,17 @@ import { computed, ref, watch } from 'vue';
 import Beat from './Beat.vue';
 import '../assets/track.css'
 
-const props = defineProps(['current_beat']);
-
+const props = defineProps(['current_beat', 'beats', 'default_beat', 'tempo_scale']);
+const note = (beat) => {
+    if (beat === 'DefaultBeat') {
+        let n = props.default_beat.note;
+        return n.pitch_class + n.octave;
+    } else if (beat === 'Unset') {
+        return '---';
+    } else {
+        return '---';
+    }
+}
 // const isToggled = ref(false)
 // console.log(props.current_beat)
 
@@ -27,9 +36,9 @@ watch(() => props.current_beat, (newVal, oldVal) => {
 
 <template>
     <!-- <el-space size="0.5rem"> -->
-    <el-radio-group v-model="computed_current_beat" class="beats-start">
-        <Beat :isToggled="i === current_beat" :key="i" :value="i" :note="i" v-for="i in 20" />
-    </el-radio-group>
+    <section class="beats-start">
+        <Beat :isToggled="i + 1 === current_beat" :key="i" :value="i" :note="note(beat)" v-for="(beat, i) in beats" />
+    </section>
     <!-- </el-space> -->
     <!-- <div class="main-track" @click.prevent="">
         <div >

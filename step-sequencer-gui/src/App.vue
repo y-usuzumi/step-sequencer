@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import TrackerView from './TrackerView/TrackerView.vue'
 import MainControl from "./MainPanel/MainControl.vue";
+import { List } from "@element-plus/icons-vue";
 
 type Sign = "Plus" | "Minus";
 
@@ -33,7 +34,8 @@ type BeatSignal = Beat | Pause | Stop
 const greetMsg = ref("Ready");
 const tempo = ref(0);
 const current_beat = ref("0");
-const status = ref("stopped")
+const status = ref("stopped");
+const tracks = ref([]);
 
 async function play() {
   console.log("play");
@@ -73,8 +75,8 @@ async function set_tempo(new_tempo: number) {
 }
 
 async function get_track_list() {
-  let list = await invoke("get_track_list");
-  console.log(list);
+  tracks.value = await invoke("get_track_list");
+  // console.log(tracks.value);
 }
 
 onMounted(async () => {
@@ -108,7 +110,7 @@ onMounted(async () => {
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
         @stop="stop()" @update:tempo="set_tempo" />
-      <TrackerView :current_beat="current_beat" />
+      <TrackerView :current_beat="current_beat" :tracks="tracks" />
       <!-- <div class="tracker-view">
               </div> -->
       <form class="row" @submit.prevent="true">

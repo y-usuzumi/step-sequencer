@@ -12,7 +12,7 @@ const computed_isToggled = computed({
         emit('updated:isToggled', value);
     }
 });
-const note = ref('C1');
+// const note = ref('C1');
 // function onClick() {
 //     computed_isToggled.value = !computed_isToggled.value;
 //     console.log(computed_isToggled);
