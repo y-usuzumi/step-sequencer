@@ -7,7 +7,7 @@ const props = defineProps(['current_beat', 'beats', 'default_beat', 'tempo_scale
 const note = (beat) => {
     if (beat === 'DefaultBeat') {
         let n = props.default_beat.note;
-        return n.pitch_class + n.octave;
+        return n.pitch_class.replace('s', '#').replace('f', 'b') + n.octave;
     } else if (beat === 'Unset') {
         return '---';
     } else {

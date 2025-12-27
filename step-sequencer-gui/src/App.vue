@@ -19,6 +19,10 @@ interface Infinity {
 
 type NaN = "NaN";
 
+interface Track {
+  [key: string]: any;
+}
+
 interface BeatTime {
   frac: Rational | Infinity | NaN,
 }
@@ -36,7 +40,8 @@ const greetMsg = ref("Ready");
 const tempo = ref(0);
 const current_beat = ref("0");
 const status = ref("stopped");
-const tracks = ref([]);
+const tracks = ref<Track[]>([]);
+const total_beats_num = ref(16);
 
 async function play() {
   console.log("play");
@@ -77,6 +82,11 @@ async function set_tempo(new_tempo: number) {
 
 async function get_track_list() {
   tracks.value = await invoke("get_track_list");
+  for (const track of tracks.value) {
+    if (track[1].beats.length > total_beats_num.value) {
+      total_beats_num.value = track[1].beats.length;
+    }
+  }
   // console.log(tracks.value);
 }
 
@@ -109,7 +119,7 @@ onMounted(async () => {
     </el-header> -->
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
-        @stop="stop()" @update:tempo="set_tempo" />
+        @stop="stop()" @update:tempo="set_tempo" :total_beats_num="total_beats_num" />
       <TrackerView :current_beat="current_beat" :tracks="tracks" />
       <DetailPanel />
       <!-- <div class="tracker-view">

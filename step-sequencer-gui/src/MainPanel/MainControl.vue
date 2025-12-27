@@ -4,7 +4,7 @@ import PlayArrowIcon from '@material-design-icons/svg/outlined/play_arrow.svg'
 import PauseIcon from '@material-design-icons/svg/outlined/pause.svg'
 import StopIcon from '@material-design-icons/svg/outlined/stop.svg'
 
-const props = defineProps(['status', 'current_beat', 'play', 'pause', 'stop']);
+const props = defineProps(['status', 'current_beat', 'play', 'pause', 'stop', 'total_beats_num']);
 const emits = defineEmits(['update:status', 'update:current_beat', 'update:tempo']);
 
 const tempo = defineModel('tempo');
@@ -32,7 +32,7 @@ const computed_tempo = computed({
 const computed_current_beat = computed({
     // Getter: 读取时，直接返回 props 的值
     get() {
-        return intBeat(props.current_beat) ? intBeat(props.current_beat) : 1;
+        return intBeat(props.current_beat) ? intBeat(props.current_beat) % props.total_beats_num : 1;
     },
     // Setter: 写入时 (用户拖动滑块)，触发 emit 通知父组件
     set(new_current_beat) {
@@ -105,7 +105,7 @@ onMounted(() => {
             </el-space>
         </el-col>
         <el-col :span="12">
-            <el-slider v-model="computed_current_beat" :min="1" :max="16" :step="1" show-stops></el-slider>
+            <el-slider v-model="computed_current_beat" :min="1" :max="total_beats_num" :step="1" show-stops></el-slider>
         </el-col>
     </el-row>
 </template>
