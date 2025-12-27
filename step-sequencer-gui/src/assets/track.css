@@ -1,9 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
 .beatel-checkbox-button__inner,
 .beat .el-radio-button__inner,
 .beat .el-checkbox-button__inner {
     border-radius: var(--el-border-radius-base) !important;
     width: 2.8rem !important;
     height: 1.9rem !important;
+}
+
+.align-with-tracks {
+    height: 2.8rem;
 }
 
 .beats-start {
@@ -20,6 +26,14 @@
 
 .auto-overflow {
     overflow: auto;
+}
+
+.simple-flex-end {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: end;
+    gap: 1rem;
 }
 
 .simple-flex-center {

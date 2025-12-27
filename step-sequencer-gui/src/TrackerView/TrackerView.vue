@@ -5,7 +5,7 @@ import '../assets/track.css'
 
 const props = defineProps(['current_beat', 'tracks']);
 
-const count = ref(2)
+const text = ref('Hello, World!');
 const computed_current_beat = computed({
     // Getter: 读取时，直接返回 props 的值
     get() {
@@ -63,44 +63,31 @@ watch(() => computed_current_beat.value, () => {
         <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
         <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
         <el-splitter>
-            <el-splitter-panel :size="20" collapsible class="no-overflow"
-                style="overflow:hidden; width: 100%; height:25rem;">
-                <el-row :gutter="10" v-for="[id, track] in tracks" style="width: calc();flex-wrap: nowrap">
-                    <el-col>
-                        <el-text type="info"
-                            style="display: inline-block; text-wrap: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Oswald'; font-size: 1rem;">{{
-                                track.name }}</el-text>
-                    </el-col>
-                </el-row>
-            </el-splitter-panel>
-            <el-splitter-panel :size="20" collapsible class="no-overflow"
+            <el-splitter-panel size="200px" collapsible class="no-overflow"
                 style="overflow:hidden; width: 100%; height:25rem;">
                 <!-- control panel -->
                 <el-container id="control-panel" class="no-overflow simple-flex-center"
                     style="overflow:hidden;position: relative;">
-                    <link rel="preconnect" href="https://fonts.googleapis.com">
-                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap"
-                        rel="stylesheet">
+
                     <!-- <el-text style="font-family: 'Oswald'; font-size: 1rem; position:sticky; top:0;">
                             Timeline:
                         </el-text> -->
-                    <el-button type="" style="visibility: hidden;"></el-button> <!-- spacer -->
-                    <el-row :gutter="10" v-for="[id, track] in tracks" style="width: calc();flex-wrap: nowrap">
-                        <!-- <el-col>
-
+                    <el-button style="visibility: hidden;"></el-button> <!-- spacer -->
+                    <section v-for="[id, track] in tracks" style="width: 100%;">
+                        <el-row :gutter="10" style="flex-wrap: nowrap;" class="simple-flex-end">
                             <el-text type="info"
                                 style="display: inline-block; text-wrap: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Oswald'; font-size: 1rem;">{{
                                     track.name }}</el-text>
-                        </el-col> -->
-                        <el-col>
-                            <el-checkbox-button type=" primary" circle>M</el-checkbox-button>
-                            <el-checkbox-button type="primary" circle>S</el-checkbox-button>
-                        </el-col>
-                    </el-row>
+                            <!-- <el-input v-model="text" placeholder=""></el-input> -->
+                            <section>
+                                <el-checkbox-button type="primary" circle>M</el-checkbox-button>
+                                <el-checkbox-button type="primary" circle>S</el-checkbox-button>
+                            </section>
+                        </el-row>
+                    </section>
                 </el-container>
             </el-splitter-panel>
-            <el-splitter-panel :size="90">
+            <el-splitter-panel :size="trackPanelSize">
                 <el-scrollbar ref="refTrackPanel" height="25rem" wrap-style="100%"
                     view-class="no-overflow simple-flex-start" @scroll="onScroll">
                     <!-- timeline -->

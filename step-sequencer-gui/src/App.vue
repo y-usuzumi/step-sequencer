@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import TrackerView from './TrackerView/TrackerView.vue'
 import MainControl from "./MainPanel/MainControl.vue";
+import DetailPanel from "./DetailPanel/DetailPanel.vue";
 import { List } from "@element-plus/icons-vue";
 
 type Sign = "Plus" | "Minus";
@@ -103,22 +104,22 @@ onMounted(async () => {
 
 <template>
   <el-container class="container">
-    <el-header>
+    <!-- <el-header>
       <h1>Welcome to Step-Sequencer</h1>
-    </el-header>
-
+    </el-header> -->
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
         @stop="stop()" @update:tempo="set_tempo" />
       <TrackerView :current_beat="current_beat" :tracks="tracks" />
+      <DetailPanel />
       <!-- <div class="tracker-view">
               </div> -->
-      <form class="row" @submit.prevent="true">
+      <!-- <form class="row" @submit.prevent="true">
         <button @click="play" v-if="status != 'playing'">▶️</button>
         <button @click="pause" v-if="status == 'playing'">⏸️</button>
         <button @click="stop" :disabled="status == 'stopped'">⏹️</button>
       </form>
-      <p>{{ greetMsg }}</p>
+      <p>{{ greetMsg }}</p> -->
     </el-main>
     <el-footer>
       <el-row :gutter="10" justify="end" align="middle">

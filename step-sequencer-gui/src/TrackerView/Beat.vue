@@ -25,10 +25,7 @@ const computed_isToggled = computed({
 </script>
 <template>
     <el-checkbox-button class="beat" type="primary" :value="value" v-model="computed_isToggled">{{ note
-    }}</el-checkbox-button>
-    <!-- <div class="main-beat" :class="{ 'toggled': isToggled }" @click.prevent="onClick">
-        {{ note }}
-    </div> -->
+        }}</el-checkbox-button>
 </template>
 
 

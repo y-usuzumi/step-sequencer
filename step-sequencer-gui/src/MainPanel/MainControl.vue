@@ -72,7 +72,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <el-row type="flex" align="middle" justify="start">
+    <el-row type="flex" align="middle" justify="start" style="margin: 2rem;">
         <el-col :span="3">
             <el-button type="default" v-if="computed_status != 'playing'" @click="handlePlay">
                 <PlayArrowIcon />

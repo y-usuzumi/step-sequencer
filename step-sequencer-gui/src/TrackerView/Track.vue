@@ -35,15 +35,9 @@ const computed_current_beat = computed({
 
 
 <template>
-    <!-- <el-space size="0.5rem"> -->
     <section class="beats-start">
         <Beat :isToggled="i + 1 === current_beat" :key="i" :value="i" :note="note(beat)" v-for="(beat, i) in beats" />
     </section>
-    <!-- </el-space> -->
-    <!-- <div class="main-track" @click.prevent="">
-        <div >
-        </div>
-    </div> -->
 </template>
 
 
