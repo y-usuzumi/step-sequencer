@@ -74,7 +74,8 @@ onMounted(() => {
 <template>
     <el-row type="flex" align="middle" justify="start" style="margin: 2rem;">
         <el-col :span="3">
-            <el-button type="default" v-if="computed_status != 'playing'" @click="handlePlay">
+            <el-button type="default" v-if="computed_status != 'playing'" @click="handlePlay"
+                style="color: var(--el-text-color)">
                 <PlayArrowIcon />
             </el-button>
             <el-button type="default" v-else-if="computed_status == 'playing'" @click="handlePause">
@@ -105,7 +106,7 @@ onMounted(() => {
             </el-space>
         </el-col>
         <el-col :span="12">
-            <el-slider v-model="computed_current_beat" :min="1" :max="total_beats_num" :step="1" show-stops></el-slider>
+            <el-slider v-model="computed_current_beat" :min="1" :max="total_beats_num" :step="1"></el-slider>
         </el-col>
     </el-row>
 </template>
@@ -117,5 +118,15 @@ onMounted(() => {
     /* el-main 默认有 20px padding，这里去掉以便让 scrollbar 贴边 */
     overflow: hidden;
     /* 禁止 el-main 自身的滚动，交给内部的 el-scrollbar */
+}
+
+/* Make SVG icons inherit Element Plus theme colors */
+:deep(svg) {
+    fill: var(--el-text-color-primary);
+}
+
+/* Button hover state */
+.el-button:hover :deep(svg) {
+    fill: var(--el-color-primary);
 }
 </style>

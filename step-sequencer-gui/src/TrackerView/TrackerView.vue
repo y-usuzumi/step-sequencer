@@ -4,6 +4,7 @@ import Track from './Track.vue';
 import '../assets/track.css'
 
 const props = defineProps(['current_beat', 'tracks']);
+const emits = defineEmits(['update:current_beat']);
 
 const text = ref('Hello, World!');
 const computed_current_beat = computed({
@@ -50,6 +51,7 @@ const onScroll = (e) => {
 }
 
 const refTrackPanel = ref(null);
+const trackPanelSize = ref(null);
 
 watch(() => computed_current_beat.value, () => {
     // console.log('current_beat changed')

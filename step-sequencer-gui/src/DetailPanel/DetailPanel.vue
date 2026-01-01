@@ -13,6 +13,10 @@
 import { ref } from 'vue'
 import "../assets/track.css"
 
+const velocity = ref(0);
+const channel = ref(0);
+
+
 </script>
 
 <style scoped></style>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// if you just want to import css
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
@@ -91,6 +93,23 @@ async function get_track_list() {
 }
 
 onMounted(async () => {
+  // Detect and listen for system theme changes
+  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const applyTheme = (e: MediaQueryList | MediaQueryListEvent) => {
+    if (e.matches) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Apply initial theme
+  applyTheme(darkModeQuery);
+
+  // Listen for system theme changes
+  darkModeQuery.addEventListener('change', applyTheme);
+
   await init();
   listen<BeatSignal>('beat-signal', (event) => {
     console.log(event);
