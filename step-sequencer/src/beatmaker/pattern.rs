@@ -26,6 +26,8 @@ pub trait ExampleDrumTracks {
     fn hihat(&self) -> DrumTrack;
     fn hihat_open(&self) -> DrumTrack;
     fn cymbal(&self) -> DrumTrack;
+    fn blabla(&self) -> DrumTrack;
+
     fn all_tracks(&self) -> Vec<DrumTrack> {
         vec![
             self.kick(),
@@ -33,6 +35,7 @@ pub trait ExampleDrumTracks {
             self.hihat(),
             self.hihat_open(),
             self.cymbal(),
+            self.blabla(),
         ]
     }
 }
@@ -90,6 +93,20 @@ impl ExampleDrumTracks for ExampleDiscoDrumTracks {
                 .into_iter()
                 .chain(repeat_slice(&[Unset], 31))
                 .collect::<Vec<DrumTrackBeat>>(),
+        )
+    }
+
+    fn blabla(&self) -> DrumTrack {
+        DrumTrack::with_beats(
+            "Blabla",
+            self.cymbal,
+            &[
+                OverrideBeat(vec![beat!(1, Note::C(0), 127)]),
+                OverrideBeat(vec![beat!(1, Note::Cs(0), 63)]),
+                OverrideBeat(vec![beat!(1, Note::D(0), 63), beat!(1, Note::E(0), 63)]),
+            ]
+            .into_iter()
+            .collect::<Vec<DrumTrackBeat>>(),
         )
     }
 }
