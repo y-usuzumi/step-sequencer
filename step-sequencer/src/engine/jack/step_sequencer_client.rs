@@ -8,7 +8,7 @@ use jack::{Frames, RawMidi};
 use log::{debug, error, info};
 
 use crate::{
-    audio::SSClient,
+    engine::SSClient,
     beatmaker::{BeatMaker, BeatMakerSubscription},
     midi::ChannelVoiceEvent,
     SSResult,

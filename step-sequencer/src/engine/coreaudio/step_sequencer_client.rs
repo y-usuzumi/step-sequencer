@@ -1,9 +1,9 @@
-use crate::audio::coreaudio::util::{current_mach_ticks_since_boot, nanosecs_to_mach_ticks};
+use crate::engine::coreaudio::util::{current_mach_ticks_since_boot, nanosecs_to_mach_ticks};
 use crate::beatmaker::{BeatMaker, BeatMakerEvent, BeatMakerSubscription};
 use crate::error::SSError;
 use crate::midi::ChannelVoiceEvent;
 use crate::project::Project;
-use crate::{audio::SSClient, SSResult};
+use crate::{engine::SSClient, SSResult};
 
 use coreaudio::audio_unit::render_callback::{self, data};
 use coreaudio::audio_unit::{AudioUnit, IOType, SampleFormat};

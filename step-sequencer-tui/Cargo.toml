@@ -14,7 +14,7 @@ crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 itertools = "0.14.0"
 
 [target.'cfg(target_os="windows")'.dependencies]
-step-sequencer = { path = "../step-sequencer", features = ["jack"] }
+step-sequencer = { path = "../step-sequencer", features = ["cpal"] }
 
 [target.'cfg(target_os="linux")'.dependencies]
 step-sequencer = { path = "../step-sequencer", features = ["jack"] }

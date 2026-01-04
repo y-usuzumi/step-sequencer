@@ -53,7 +53,7 @@ mod tests {
 
     use coremidi::PacketBuffer;
 
-    use crate::audio::coreaudio::util::nanosecs_to_mach_ticks;
+    use crate::engine::coreaudio::util::nanosecs_to_mach_ticks;
 
     use super::{CoreAudioMIDIAdapter, Receivable};
 

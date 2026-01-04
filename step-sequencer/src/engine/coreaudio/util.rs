@@ -13,27 +13,27 @@ fn get_timebase_info() -> mach_timebase_info {
 }
 
 #[inline]
-pub(in crate::audio::coreaudio) fn nanosecs_to_mach_ticks(nanos: u64) -> u64 {
+pub(in crate::engine::coreaudio) fn nanosecs_to_mach_ticks(nanos: u64) -> u64 {
     let timebase_info = get_timebase_info();
     let ticks = (nanos as u64 * timebase_info.denom as u64) / timebase_info.numer as u64;
     ticks
 }
 
 #[inline]
-pub(in crate::audio::coreaudio) fn mach_ticks_to_nanosecs(ticks: u64) -> u64 {
+pub(in crate::engine::coreaudio) fn mach_ticks_to_nanosecs(ticks: u64) -> u64 {
     let timebase_info = get_timebase_info();
     let nanos = (ticks as u64 * timebase_info.numer as u64) / timebase_info.denom as u64;
     nanos
 }
 
 #[inline]
-pub(in crate::audio::coreaudio) fn current_nanosecs_since_boot() -> u64 {
+pub(in crate::engine::coreaudio) fn current_nanosecs_since_boot() -> u64 {
     let ticks = current_mach_ticks_since_boot();
     mach_ticks_to_nanosecs(ticks)
 }
 
 #[inline]
-pub(in crate::audio::coreaudio) fn current_mach_ticks_since_boot() -> u64 {
+pub(in crate::engine::coreaudio) fn current_mach_ticks_since_boot() -> u64 {
     unsafe { mach_absolute_time() }
 }
 
@@ -41,7 +41,7 @@ pub(in crate::audio::coreaudio) fn current_mach_ticks_since_boot() -> u64 {
 mod tests {
     use std::{thread, time::Duration};
 
-    use crate::audio::coreaudio::util::{current_mach_ticks_since_boot, mach_ticks_to_nanosecs};
+    use crate::engine::coreaudio::util::{current_mach_ticks_since_boot, mach_ticks_to_nanosecs};
 
     #[test]
     fn test_instant_to_system_ticks() {

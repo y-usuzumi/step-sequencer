@@ -4,7 +4,7 @@ use std::{rc::Rc, sync::RwLockWriteGuard};
 use log::{error, info};
 
 use crate::{
-    audio::{create_ss_client, SSClient},
+    engine::{create_ss_client, SSClient},
     beatmaker::{BeatMaker, BeatMakerSubscription},
     drum_track::DrumTrack,
     error::SSError,
