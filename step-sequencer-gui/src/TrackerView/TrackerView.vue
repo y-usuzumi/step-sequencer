@@ -3,8 +3,10 @@ import { ref, computed, watch } from 'vue'
 import Track from './Track.vue';
 import '../assets/track.css'
 
-const props = defineProps(['current_beat', 'tracks']);
+const props = defineProps(['current_beat']);
 const emits = defineEmits(['update:current_beat']);
+
+const tracks = defineModel('tracks', { default: [] });
 
 const text = ref('Hello, World!');
 const computed_current_beat = computed({
@@ -57,6 +59,10 @@ watch(() => computed_current_beat.value, () => {
     // console.log('current_beat changed')
     // console.log(refTrackPanel)
     refTrackPanel.value.setScrollLeft((computed_current_beat.value - 3) * 50)
+})
+
+watch(() => tracks.value, () => {
+    console.log('tracks changed', tracks.value)
 })
 </script>
 

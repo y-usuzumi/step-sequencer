@@ -2,8 +2,9 @@
 import { id } from 'element-plus/es/locales.mjs';
 import { ref, defineProps, defineEmits, computed, onMounted, watch } from 'vue';
 import '../assets/track.css'
-const props = defineProps(['id', 'value', 'isToggled', 'note']);
-const emit = defineEmits(['update:isToggled', 'update:note']);
+const props = defineProps(['id', 'value', 'isToggled']);
+const emit = defineEmits(['update:isToggled']);
+const note = defineModel('note', { default: '---' });
 const computed_isToggled = computed({
     get() {
         return props.isToggled;
@@ -21,11 +22,19 @@ const computed_isToggled = computed({
 // watch(() => props.isToggled, (newVal, oldVal) => {
 //     console.log(newVal, '=>', oldVal);
 // })
+watch(() => note.value, () => {
+    console.log("note changed to", note.value)
+})
 
 </script>
 <template>
-    <el-checkbox-button class="beat" type="primary" :value="value" v-model="computed_isToggled">{{ note
-        }}</el-checkbox-button>
+    <el-popover title="Edit Beat" content="Edit a beat" trigger="click" placement="top-start">
+        <template #reference>
+            <el-checkbox-button class="beat" type="primary" :value="value" v-model="computed_isToggled">{{ note
+                }}</el-checkbox-button>
+        </template>
+        <el-input v-model="note" placeholder=""></el-input>
+    </el-popover>
 </template>
 
 

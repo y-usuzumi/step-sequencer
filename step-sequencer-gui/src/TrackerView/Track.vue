@@ -3,7 +3,9 @@ import { computed, ref, watch } from 'vue';
 import Beat from './Beat.vue';
 import '../assets/track.css'
 
-const props = defineProps(['current_beat', 'beats', 'default_beat', 'tempo_scale']);
+const props = defineProps(['current_beat', 'default_beat']);
+const beats = defineModel('beats', { default: [] });
+const tempo_scale = defineModel('tempo_scale', { default: 120 });
 const note = (beat) => {
     if (beat === 'DefaultBeat') {
         let n = props.default_beat.note;
@@ -11,7 +13,7 @@ const note = (beat) => {
     } else if (beat === 'Unset') {
         return '---';
     } else {
-        return '---';
+        return beat.OverrideBeat.map(n => n.note.pitch_class.replace('s', '#').replace('f', 'b') + n.note.octave).toString()
     }
 }
 // const isToggled = ref(false)
@@ -31,6 +33,8 @@ const computed_current_beat = computed({
 // watch(() => props.current_beat, (newVal, oldVal) => {
 //     console.log(`${oldVal} -> ${newVal}`)
 // })
+
+
 </script>
 
 

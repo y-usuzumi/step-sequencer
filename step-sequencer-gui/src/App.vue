@@ -159,6 +159,11 @@ onMounted(async () => {
 </template>
 
 <style>
+.el-radio-button__inner,
+.el-checkbox-button__inner {
+  transition: none !important;
+}
+
 :root {
   color: darkslategray;
   /* background-color: mintcream; */
