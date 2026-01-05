@@ -6,3 +6,8 @@ members = [
     "step-sequencer-tui",
     "step-sequencer-gui/src-tauri",
 ]
+default-members = [
+    "step-sequencer",
+    "step-sequencer-tui",
+    "step-sequencer-gui/src-tauri",
+]

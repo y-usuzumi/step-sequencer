@@ -1,10 +1,23 @@
 [package]
 name = "step-sequencer-playground"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 jack = { version = "0.13.0", optional = true }
+cpal = { version = "0.17.0", optional = true }
+anyhow = "1.0.100"
+clap = "4.5.54"
 
 [features]
 jack = ["dep:jack"]
+cpal = ["dep:cpal"]
+
+[target.'cfg(target_os="windows")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["cpal"] }
+
+[target.'cfg(target_os="linux")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["jack"] }
+
+[target.'cfg(target_os="macos")'.dependencies]
+step-sequencer = { path = "../step-sequencer", features = ["coreaudio"] }
