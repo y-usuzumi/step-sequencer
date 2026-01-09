@@ -94,6 +94,7 @@ async function get_track_list() {
 async function add_empty_track() {
   console.log("add_empty_track");
   greetMsg.value = await invoke("add_empty_track");
+  await get_track_list();
 }
 
 onMounted(async () => {
