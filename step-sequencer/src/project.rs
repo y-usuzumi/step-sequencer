@@ -53,6 +53,11 @@ impl Project {
         self.add_track(DrumTrack::new("Unnamed"))
     }
 
+    pub fn remove_track(&self, track_id: SSId) -> Option<DrumTrack> {
+        let mut tracks = self.tracks.write().unwrap();
+        tracks.shift_remove(&track_id)
+    }
+
     pub fn project_settings(&self) -> Arc<RwLock<ProjectSettings>> {
         self.project_settings.clone()
     }

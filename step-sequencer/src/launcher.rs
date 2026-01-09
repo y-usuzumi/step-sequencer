@@ -21,6 +21,7 @@ pub enum Command {
     Quit,
     ChangeTempo(Tempo),
     AddTrack,
+    RemoveTrack(usize),
     RenameTrack(usize, String),
     ToggleBeat(usize, usize),
     Resize(usize, usize),
@@ -50,7 +51,18 @@ pub struct SSLauncher {
     ss_client: Box<dyn SSClient + Send>,
 }
 
-fn get_track<'a>(
+fn get_track_id(
+    track_map: &TrackMap,
+    track_idx: usize,
+) -> Option<crate::id::SSId> {
+    let mut keys = track_map.keys();
+    for _ in 0..track_idx {
+        keys.next();
+    }
+    keys.next().cloned()
+}
+
+fn get_track_mut<'a>(
     track_map: &'a mut RwLockWriteGuard<TrackMap>,
     track_idx: usize,
 ) -> Option<&'a mut DrumTrack> {
@@ -59,6 +71,14 @@ fn get_track<'a>(
         tracks.next();
     }
     tracks.next()
+}
+
+fn get_track<'a>(
+    track_map: &'a mut RwLockWriteGuard<TrackMap>,
+    track_idx: usize,
+) -> Option<&'a DrumTrack> {
+    get_track_mut(track_map, track_idx)
+    .map(|track| track as &DrumTrack)
 }
 
 impl SSLauncher {
@@ -113,12 +133,25 @@ impl SSLauncher {
                 self.project.add_empty_track();
                 self.beatmaker.reload_beat_sorter();
             }
+            Command::RemoveTrack(track_idx) => {
+                info!("[🗑️ {}]", track_idx + 1);
+                let binding = self.project.tracks();
+                let mut trackmap = binding.write().unwrap();
+                let track_id = get_track_id(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                    crate::error::CommandError::CommandExecutionError(
+                        command,
+                        format!("Track {} does not exist", track_idx),
+                    ),
+                ))?;
+                trackmap.shift_remove(&track_id);
+                self.beatmaker.reload_beat_sorter();
+            }
             Command::RenameTrack(track_idx, ref name) => {
                 let name = name.clone();
                 info!("[🛤️ {}] name -> {}", track_idx + 1, name);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -130,7 +163,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Toggle beat @ {}", track_idx + 1, beat + 1);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -142,7 +175,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Resize -> {}", track_idx + 1, size);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -154,7 +187,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Tempo scale -> {}", track_idx + 1, scale);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -167,7 +200,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Channel -> {}", track_idx + 1, channel + 1);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -179,7 +212,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Note -> {}", track_idx + 1, note);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
@@ -191,7 +224,7 @@ impl SSLauncher {
                 info!("[🛤️ {}] Velocity -> {}", track_idx + 1, velocity);
                 let binding = self.project.tracks();
                 let mut trackmap = binding.write().unwrap();
-                let track = get_track(&mut trackmap, track_idx).ok_or(SSError::CommandError(
+                let track = get_track_mut(&mut trackmap, track_idx).ok_or(SSError::CommandError(
                     crate::error::CommandError::CommandExecutionError(
                         command,
                         format!("Track {} does not exist", track_idx),
