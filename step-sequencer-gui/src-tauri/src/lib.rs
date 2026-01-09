@@ -1,14 +1,14 @@
 use std::{sync::Mutex, thread};
 
 use step_sequencer::{
+    SSResult,
     beatmaker::{
-        pattern::{ExampleDrumTracks, EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND},
         BeatMakerEvent, BeatMakerSubscription,
+        pattern::{EXAMPLE_DRUMTRACKS_BITWIG, EXAMPLE_DRUMTRACKS_GARAGEBAND, ExampleDrumTracks},
     },
     drum_track::DrumTrack,
     id::SSId,
-    launcher::SSLauncher,
-    SSResult,
+    launcher::{Command, SSLauncher},
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -98,13 +98,25 @@ fn get_track_list(state: State<Mutex<AppState>>) -> Vec<(String, DrumTrack)> {
 }
 
 #[tauri::command]
-fn add_empty_track(state: State<Mutex<AppState>>) -> SSId {
+fn add_empty_track(state: State<Mutex<AppState>>) -> Result<String, String> {
     state
         .lock()
         .unwrap()
         .ss_launcher
-        .project()
-        .add_empty_track()
+        .send_command(Command::AddTrack)
+        .map_err(|e| e.to_string())?;
+    Ok(format!("add track"))
+}
+
+#[tauri::command]
+fn remove_track(state: State<Mutex<AppState>>, track_idx: usize) -> Result<String, String> {
+    state
+        .lock()
+        .unwrap()
+        .ss_launcher
+        .send_command(Command::RemoveTrack(track_idx))
+        .map_err(|e| e.to_string())?;
+    Ok(format!("remove track {track_idx}"))
 }
 
 fn run_beatmaker_event_handler(
@@ -139,7 +151,8 @@ pub fn run() {
             get_tempo,
             set_tempo,
             get_track_list,
-            add_empty_track
+            add_empty_track,
+            remove_track
         ])
         .setup(|app| {
             let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();
