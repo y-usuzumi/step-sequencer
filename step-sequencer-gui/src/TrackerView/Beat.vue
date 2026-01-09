@@ -5,6 +5,8 @@ import '../assets/track.css'
 const props = defineProps(['id', 'value', 'isToggled']);
 const emit = defineEmits(['update:isToggled']);
 const note = defineModel('note', { default: '---' });
+const channel = ref(0)
+const volocity = ref(100)
 const computed_isToggled = computed({
     get() {
         return props.isToggled;
@@ -34,6 +36,8 @@ watch(() => note.value, () => {
                 }}</el-checkbox-button>
         </template>
         <el-input v-model="note" placeholder=""></el-input>
+        <el-input v-model="volocity" placeholder=""></el-input>
+        <el-input v-model="channel" placeholder=""></el-input>
     </el-popover>
 </template>
 

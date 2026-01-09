@@ -1,4 +1,4 @@
-use std::{array, sync::Mutex, thread};
+use std::{sync::Mutex, thread};
 
 use step_sequencer::{
     beatmaker::{
@@ -6,6 +6,7 @@ use step_sequencer::{
         BeatMakerEvent, BeatMakerSubscription,
     },
     drum_track::DrumTrack,
+    id::SSId,
     launcher::SSLauncher,
     SSResult,
 };
@@ -96,6 +97,16 @@ fn get_track_list(state: State<Mutex<AppState>>) -> Vec<(String, DrumTrack)> {
         .collect()
 }
 
+#[tauri::command]
+fn add_empty_track(state: State<Mutex<AppState>>) -> SSId {
+    state
+        .lock()
+        .unwrap()
+        .ss_launcher
+        .project()
+        .add_empty_track()
+}
+
 fn run_beatmaker_event_handler(
     app_handle: AppHandle,
     beatmaker_subscription: BeatMakerSubscription,
@@ -127,7 +138,8 @@ pub fn run() {
             stop,
             get_tempo,
             set_tempo,
-            get_track_list
+            get_track_list,
+            add_empty_track
         ])
         .setup(|app| {
             let beatmaker_event_subscription = ss_launcher.subscribe_to_beatmaker();

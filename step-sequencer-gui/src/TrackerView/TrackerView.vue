@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import Track from './Track.vue';
 import '../assets/track.css'
+import ContextMenu from '@imengyu/vue3-context-menu'
 
-const props = defineProps(['current_beat']);
+const props = defineProps(['current_beat', 'add_empty_track']);
 const emits = defineEmits(['update:current_beat']);
 
 const tracks = defineModel('tracks', { default: [] });
@@ -55,6 +56,36 @@ const onScroll = (e) => {
 const refTrackPanel = ref(null);
 const trackPanelSize = ref(null);
 
+const contextmenu = (e) => {
+    e.preventDefault();
+    console.log('right click', e);
+    ContextMenu.showContextMenu({
+        x: e.x,
+        y: e.y,
+        // 菜单样式主题，可选 'default', 'dark' 等
+        // theme: 'default',
+        items: [
+            {
+                label: "add an empty track ",
+                onClick: () => props.add_empty_track()
+            },
+            // {
+            //     label: "Delete",
+            //     // 可以直接用简单的 string icon，也可以支持 h() 渲染图标
+            //     icon: "icon-trash",
+            //     onClick: () => console.log("Delete clicked")
+            // },
+            // {
+            //     label: "Sub Menu", children: [
+            //         { label: "Item 1" },
+            //         { label: "Item 2" }
+            //     ]
+            // }
+        ]
+    });
+};
+
+
 watch(() => computed_current_beat.value, () => {
     // console.log('current_beat changed')
     // console.log(refTrackPanel)
@@ -71,7 +102,7 @@ watch(() => tracks.value, () => {
         <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
         <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
         <el-splitter>
-            <el-splitter-panel size="200px" collapsible class="no-overflow"
+            <el-splitter-panel size="200px" collapsible class="no-overflow" @contextmenu="contextmenu"
                 style="overflow:hidden; width: 100%; height:25rem;">
                 <!-- control panel -->
                 <el-container id="control-panel" class="no-overflow simple-flex-center"
@@ -103,7 +134,7 @@ watch(() => tracks.value, () => {
                         style="position: sticky; top:0;">
                         <el-radio-button type="primary" v-for="i in total_beats_num" :value="i">{{
                             i
-                        }}</el-radio-button>
+                            }}</el-radio-button>
                     </el-radio-group>
                     <!-- main tracks -->
                     <Track v-for="[id, track] in tracks" :id="id" :beats="track.beats"

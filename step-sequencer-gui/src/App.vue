@@ -91,6 +91,10 @@ async function get_track_list() {
   }
   // console.log(tracks.value);
 }
+async function add_empty_track() {
+  console.log("add_empty_track");
+  greetMsg.value = await invoke("add_empty_track");
+}
 
 onMounted(async () => {
   // Detect and listen for system theme changes
@@ -139,7 +143,7 @@ onMounted(async () => {
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
         @stop="stop()" @update:tempo="set_tempo" :total_beats_num="total_beats_num" />
-      <TrackerView :current_beat="current_beat" :tracks="tracks" />
+      <TrackerView :current_beat="current_beat" :tracks="tracks" :add_empty_track="add_empty_track" />
       <DetailPanel />
       <!-- <div class="tracker-view">
               </div> -->
