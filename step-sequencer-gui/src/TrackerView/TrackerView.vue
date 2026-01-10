@@ -4,7 +4,7 @@ import Track from './Track.vue';
 import '../assets/track.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
-const props = defineProps(['current_beat', 'add_empty_track']);
+const props = defineProps(['current_beat', 'add_empty_track', 'remove_track']);
 const emits = defineEmits(['update:current_beat']);
 
 const tracks = defineModel('tracks', { default: [] });
@@ -56,7 +56,7 @@ const onScroll = (e) => {
 const refTrackPanel = ref(null);
 const trackPanelSize = ref(null);
 
-const contextmenu = (e) => {
+const onControlPanelContextMenu = (e) => {
     e.preventDefault();
     console.log('right click', e);
     ContextMenu.showContextMenu({
@@ -68,6 +68,27 @@ const contextmenu = (e) => {
             {
                 label: "add an empty track ",
                 onClick: () => props.add_empty_track()
+            },
+        ]
+    });
+};
+const onTrackContextMenu = (e, id, idx) => {
+    e.preventDefault();
+    console.log('right click', e, id, idx);
+    ContextMenu.showContextMenu({
+        x: e.x,
+        y: e.y,
+        // 菜单样式主题，可选 'default', 'dark' 等
+        // theme: 'default',
+        items: [
+            {
+                label: "add an empty track ",
+                onClick: () => props.add_empty_track()
+            },
+            {
+                label: "delete track",
+                // onClick: () => console.log(idx)
+                onClick: () => props.remove_track(idx)
             },
             // {
             //     label: "Delete",
@@ -102,7 +123,7 @@ watch(() => tracks.value, () => {
         <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
         <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
         <el-splitter>
-            <el-splitter-panel size="200px" collapsible class="no-overflow" @contextmenu="contextmenu"
+            <el-splitter-panel size="200px" collapsible class="no-overflow"
                 style="overflow:hidden; width: 100%; height:25rem;">
                 <!-- control panel -->
                 <el-container id="control-panel" class="no-overflow simple-flex-center"
@@ -112,7 +133,8 @@ watch(() => tracks.value, () => {
                             Timeline:
                         </el-text> -->
                     <el-button style="visibility: hidden;"></el-button> <!-- spacer -->
-                    <section v-for="[id, track] in tracks" style="width: 100%;">
+                    <section v-for="([id, track], idx) in tracks" style="width: 100%;" :id="id" :idx="idx"
+                        @contextmenu="(e) => onTrackContextMenu(e, id, idx)">
                         <el-row :gutter="10" style="flex-wrap: nowrap;" class="simple-flex-end">
                             <el-text type="info"
                                 style="display: inline-block; text-wrap: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Oswald'; font-size: 1rem;">{{
@@ -134,12 +156,12 @@ watch(() => tracks.value, () => {
                         style="position: sticky; top:0;">
                         <el-radio-button type="primary" v-for="i in total_beats_num" :value="i">{{
                             i
-                            }}</el-radio-button>
+                        }}</el-radio-button>
                     </el-radio-group>
                     <!-- main tracks -->
-                    <Track v-for="[id, track] in tracks" :id="id" :beats="track.beats"
+                    <Track v-for="([id, track], idx) in tracks" :id="id" :idx="idx" :beats="track.beats"
                         :default_beat="track.default_beat" :tempo_scale="track.tempo_scale"
-                        :current_beat="computed_current_beat" />
+                        :current_beat="computed_current_beat" @contextmenu="(e) => onTrackContextMenu(e, id, idx)" />
                 </el-scrollbar>
             </el-splitter-panel>
         </el-splitter>

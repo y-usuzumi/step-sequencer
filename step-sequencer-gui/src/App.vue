@@ -97,6 +97,12 @@ async function add_empty_track() {
   await get_track_list();
 }
 
+async function remove_track(track_idx: number) {
+  console.log('remove track:', track_idx)
+  greetMsg.value = await invoke("remove_track", { trackIdx: track_idx });
+  await get_track_list();
+}
+
 onMounted(async () => {
   // Detect and listen for system theme changes
   const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -144,7 +150,8 @@ onMounted(async () => {
     <el-main>
       <MainControl :status="status" :tempo="tempo" :current_beat="current_beat" @play="play()" @pause="pause()"
         @stop="stop()" @update:tempo="set_tempo" :total_beats_num="total_beats_num" />
-      <TrackerView :current_beat="current_beat" :tracks="tracks" :add_empty_track="add_empty_track" />
+      <TrackerView :current_beat="current_beat" :tracks="tracks" :add_empty_track="add_empty_track"
+        :remove_track="remove_track" />
       <DetailPanel />
       <!-- <div class="tracker-view">
               </div> -->
