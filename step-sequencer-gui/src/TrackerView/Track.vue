@@ -30,11 +30,6 @@ const computed_current_beat = computed({
     }
 });
 
-// watch(() => props.current_beat, (newVal, oldVal) => {
-//     console.log(`${oldVal} -> ${newVal}`)
-// })
-
-
 </script>
 
 

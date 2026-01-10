@@ -1,8 +1,10 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, h } from 'vue'
 import Track from './Track.vue';
 import '../assets/track.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
+import DeleteIcon from '@material-design-icons/svg/outlined/delete.svg'
+import AddIcon from '@material-design-icons/svg/outlined/add.svg'
 
 const props = defineProps(['current_beat', 'add_empty_track', 'remove_track']);
 const emits = defineEmits(['update:current_beat']);
@@ -66,7 +68,12 @@ const onControlPanelContextMenu = (e) => {
         // theme: 'default',
         items: [
             {
-                label: "add an empty track ",
+                label: "Add an empty track ",
+                icon: h(AddIcon, {
+                    style: {
+                        size: 20
+                    }
+                }),
                 onClick: () => props.add_empty_track()
             },
         ]
@@ -74,34 +81,43 @@ const onControlPanelContextMenu = (e) => {
 };
 const onTrackContextMenu = (e, id, idx) => {
     e.preventDefault();
+    e.stopPropagation();
     console.log('right click', e, id, idx);
     ContextMenu.showContextMenu({
         x: e.x,
         y: e.y,
         // 菜单样式主题，可选 'default', 'dark' 等
         // theme: 'default',
+        style: {
+            font: 'Oswald'
+        },
         items: [
             {
-                label: "add an empty track ",
+                label: "Add an empty track ",
+                icon: h(AddIcon, {
+                    style: {
+                        size: 20
+                    }
+                }),
                 onClick: () => props.add_empty_track()
             },
             {
-                label: "delete track",
-                // onClick: () => console.log(idx)
+                label: "Delete track",
+                icon: h(DeleteIcon, {
+                    style: {
+                        size: 20
+                    }
+                }),
                 onClick: () => props.remove_track(idx)
             },
-            // {
-            //     label: "Delete",
-            //     // 可以直接用简单的 string icon，也可以支持 h() 渲染图标
-            //     icon: "icon-trash",
-            //     onClick: () => console.log("Delete clicked")
-            // },
-            // {
-            //     label: "Sub Menu", children: [
-            //         { label: "Item 1" },
-            //         { label: "Item 2" }
-            //     ]
-            // }
+            {
+                label: "Adjust", children: [
+                    // TODO
+                    { label: "set volocity" },
+                    { label: "set note" },
+                    { label: "set channel" }
+                ]
+            }
         ]
     });
 };
@@ -120,18 +136,13 @@ watch(() => tracks.value, () => {
 
 <template>
     <el-card shadow="never" body-style="padding: 0;" style="margin: 2rem;">
-        <!-- <el-container style="height: 100%; padding: 0.6rem;"> -->
-        <!-- <el-scrollbar style="height:25rem; padding: 0.6rem;" height="100%" wrap-style="height: 25rem;" view-class=""> -->
         <el-splitter>
             <el-splitter-panel size="200px" collapsible class="no-overflow"
-                style="overflow:hidden; width: 100%; height:25rem;">
+                style="overflow:hidden; width: 100%; height:25rem;" @contextmenu="onControlPanelContextMenu">
                 <!-- control panel -->
                 <el-container id="control-panel" class="no-overflow simple-flex-center"
                     style="overflow:hidden;position: relative;">
 
-                    <!-- <el-text style="font-family: 'Oswald'; font-size: 1rem; position:sticky; top:0;">
-                            Timeline:
-                        </el-text> -->
                     <el-button style="visibility: hidden;"></el-button> <!-- spacer -->
                     <section v-for="([id, track], idx) in tracks" style="width: 100%;" :id="id" :idx="idx"
                         @contextmenu="(e) => onTrackContextMenu(e, id, idx)">
@@ -165,16 +176,12 @@ watch(() => tracks.value, () => {
                 </el-scrollbar>
             </el-splitter-panel>
         </el-splitter>
-        <!-- </el-scrollbar> -->
 
-        <!-- </el-container> -->
         <el-space :size="20" direction="vertical">
 
 
         </el-space>
     </el-card>
-    <!-- <div class="main-tracker-view" @click.prevent="">
-    </div> -->
 </template>
 
 <style scoped>

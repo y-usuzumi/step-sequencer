@@ -13,6 +13,8 @@
 }
 
 .beats-start {
+    height: 1.9rem;
+    width: 100%;
     display: inline-flex;
     justify-content: flex-start;
     align-items: center;
